@@ -279,6 +279,33 @@
       margin-top: 4px;
     }
 
+    .type-toggle {
+      display: flex;
+      gap: 6px;
+      background: var(--accent-soft);
+      padding: 6px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .type-btn.active {
+      background: var(--card);
+      color: var(--accent);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+    }
+
     .category-input-container {
       position: relative;
     }
@@ -402,7 +429,7 @@
     <textarea id="note" placeholder="Add a note..."></textarea>
 
     <div class="row" style="margin-top: 16px;">
-      <button class="btn" id="saveBtn" onclick="saveTransaction()" data-i18n="saveExpenseBtn">✓ Save Expense</button>
+      <button class="btn" id="saveBtn" onclick="saveExpense()" data-i18n="saveExpenseBtn">✓ Save Expense</button>
       <button class="btn secondary" onclick="clearForm()" data-i18n="clearBtn">Clear</button>
     </div>
   </div>
@@ -451,6 +478,30 @@
         <tbody id="expenseTableBody">
           <tr style="text-align: center;">
             <td colspan="6" style="padding: 20px; color: var(--muted);">No expenses yet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Income -->
+  <h3 data-i18n="recentIncome">💰 Recent Income</h3>
+  <div class="card">
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Sl.</th>
+            <th>Source</th>
+            <th>Amount (₹)</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="incomeTableBody">
+          <tr style="text-align: center;">
+            <td colspan="6" style="padding: 20px; color: var(--muted);">No income yet</td>
           </tr>
         </tbody>
       </table>
@@ -521,6 +572,8 @@
   // ============================================
   
   class StorageManager {
+    static recentSaves = [];
+
     static getHeaders() {
       // This function is well-written
       const token = localStorage.getItem('token');
@@ -532,7 +585,12 @@
     }
 
     static getLocalExpenses() {
-      return JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
+      try {
+        return JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
+      } catch (e) {
+        console.warn("Corrupted local expenses, resetting.");
+        return [];
+      }
     }
 
     static saveLocalExpenses(list) {
@@ -542,7 +600,7 @@
     static async saveTransaction(transaction) {
       if (this.getMode() === 'local') {
         const list = this.getLocalExpenses();
-        const newExpense = { ...expense, _id: 'loc_' + Date.now(), id: 'loc_' + Date.now() };
+        const newExpense = { ...transaction, _id: 'loc_' + Date.now(), id: 'loc_' + Date.now() };
         list.push(newExpense);
         this.saveLocalExpenses(list);
         return newExpense;
@@ -558,28 +616,57 @@
           body: JSON.stringify(transaction)
         });
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        return await res.json();
+        const saved = await res.json();
+        // Merge request data with response to ensure UI has all fields immediately
+        const completeSaved = { ...transaction, ...(saved || {}) };
+        if (!completeSaved._id && !completeSaved.id) {
+            completeSaved._id = 'temp_' + Date.now();
+        }
+        this.recentSaves.push(completeSaved);
+        return completeSaved;
       } catch (error) {
         console.error('Error saving expense:', error);
-        alert(`Failed to save expense to server: ${error.message}`);
-        throw error;
+        // Fallback to local storage
+        const list = this.getLocalExpenses();
+        const newExpense = { ...transaction, _id: 'loc_' + Date.now(), id: 'loc_' + Date.now() };
+        list.push(newExpense);
+        this.saveLocalExpenses(list);
+        return newExpense;
       }
     }
 
     static async loadExpenses() {
+      const localExpenses = this.getLocalExpenses();
       if (this.getMode() === 'local') {
-        return this.getLocalExpenses();
+        return localExpenses;
       }
 
       try {
-        const res = await fetch(`${API_URL}/expenses`, {
-          headers: this.getHeaders()
+        const res = await fetch(`${API_URL}/expenses?limit=200`, {
+          headers: this.getHeaders(),
+          cache: 'no-store'
         });
-        if (!res.ok) return [];
-        return await res.json();
+        
+        let validServerExpenses = [];
+        if (res.ok) {
+          const serverExpenses = await res.json();
+          validServerExpenses = Array.isArray(serverExpenses) ? serverExpenses : [];
+        }
+        
+        // Merge recent saves to ensure immediate UI update (fix race conditions)
+        if (this.recentSaves.length > 0) {
+            const serverIds = new Set(validServerExpenses.map(e => e._id || e.id));
+            const missing = this.recentSaves.filter(e => {
+              const id = e._id || e.id;
+              return id && !serverIds.has(id);
+            });
+            validServerExpenses = [...missing, ...validServerExpenses];
+        }
+        return [...validServerExpenses, ...localExpenses];
       } catch (e) {
         console.error('Error loading expenses:', e);
-        return [];
+        // Return recent saves + local on error
+        return [...this.recentSaves, ...localExpenses];
       }
     }
 
@@ -704,8 +791,13 @@
 
       clearForm();
       await loadExpenses(currentMonthFilter);
-      await updateHighestExpenses();
-      showToast('✓ Expense saved successfully!');
+      try { await updateHighestExpenses(); } catch(e) { console.error("Stats update failed", e); }
+      
+      if (saved._id && saved._id.startsWith('loc_') && localStorage.getItem(STORAGE_MODE_KEY) !== 'local') {
+        showToast('Saved locally (Network error)', 'warning');
+      } else {
+        showToast('✓ Expense saved successfully!');
+      }
     } catch (error) {
       console.error('Error saving expense:', error);
       showToast('Error saving expense. Please try again.', 'error');
@@ -748,6 +840,7 @@
       const currentYear = now.getFullYear();
 
       let filtered = expenses.filter(exp => {
+        if (!exp.date) return false;
         const expDate = new Date(exp.date);
         const expMonth = expDate.getMonth();
         const expYear = expDate.getFullYear();
@@ -763,30 +856,56 @@
 
       filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+      const expenseData = filtered.filter(e => e.type !== 'income');
+      const incomeData = filtered.filter(e => e.type === 'income');
+
       const tbody = document.getElementById('expenseTableBody');
       tbody.innerHTML = '';
 
-      if (filtered.length === 0) {
+      if (expenseData.length === 0) {
         tbody.innerHTML = '<tr style="text-align: center;"><td colspan="6" style="padding: 20px; color: var(--muted);">No expenses for this period</td></tr>';
-        return;
+      } else {
+        expenseData.forEach((exp, index) => {
+          const expDate = new Date(exp.date);
+          const dateStr = expDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          const timeStr = expDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${exp.category}</td>
+            <td style="font-weight: 700; color: var(--accent);">₹${(exp.amount || 0).toLocaleString('en-IN')}</td>
+            <td>${dateStr}</td>
+            <td>${timeStr}</td>
+            <td><button class="btn secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deleteExpenseHandler('${exp._id || exp.id}')">Delete</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
       }
 
-      filtered.forEach((exp, index) => {
-        const expDate = new Date(exp.date);
-        const dateStr = expDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const timeStr = expDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const incomeTbody = document.getElementById('incomeTableBody');
+      incomeTbody.innerHTML = '';
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${exp.category}</td>
-          <td style="font-weight: 700; color: var(--accent);">₹${(exp.amount || 0).toLocaleString('en-IN')}</td>
-          <td>${dateStr}</td>
-          <td>${timeStr}</td>
-          <td><button class="btn secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deleteExpenseHandler('${exp._id || exp.id}')">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
+      if (incomeData.length === 0) {
+        incomeTbody.innerHTML = '<tr style="text-align: center;"><td colspan="6" style="padding: 20px; color: var(--muted);">No income for this period</td></tr>';
+      } else {
+        incomeData.forEach((exp, index) => {
+          const expDate = new Date(exp.date);
+          const dateStr = expDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          const timeStr = expDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${exp.category}</td>
+            <td style="font-weight: 700; color: var(--success);">+₹${(exp.amount || 0).toLocaleString('en-IN')}</td>
+            <td>${dateStr}</td>
+            <td>${timeStr}</td>
+            <td><button class="btn secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deleteExpenseHandler('${exp._id || exp.id}')">Delete</button></td>
+          `;
+          incomeTbody.appendChild(tr);
+        });
+      }
     } catch (error) {
       console.error('Error loading expenses:', error);
       showToast('Error loading expenses', 'error');
@@ -814,6 +933,7 @@
       const currentYear = now.getFullYear();
 
       const thisMonth = expenses.filter(exp => {
+        if (exp.type === 'income') return false;
         const expDate = new Date(exp.date);
         return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
       });
@@ -823,7 +943,7 @@
         : null;
 
       const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-      const last3Months = expenses.filter(exp => new Date(exp.date) >= threeMonthsAgo);
+      const last3Months = expenses.filter(exp => exp.type !== 'income' && new Date(exp.date) >= threeMonthsAgo);
       const highest3 = last3Months.length > 0
         ? last3Months.reduce((max, exp) => (exp.amount || 0) > (max.amount || 0) ? exp : max)
         : null;

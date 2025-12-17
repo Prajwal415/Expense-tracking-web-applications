@@ -98,6 +98,17 @@
       cursor: pointer;
       margin-left: 10px;
     }
+    /* Toast Notification */
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: #1e293b; color: white; padding: 12px 24px; border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10000;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; opacity: 0; pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
   </style>
 </head>
 <body>
@@ -140,6 +151,9 @@
   </div>
 </div>
 
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
 <script>
   const API_BASE = (window.location.port && window.location.port !== '5003') ? `http://${window.location.hostname}:5003` : '';
   const API_URL = `${API_BASE}/api`;
@@ -149,6 +163,13 @@
   const theme = localStorage.getItem("appTheme") || "light";
   document.documentElement.setAttribute("data-theme", theme);
 
+  function showToast(message, type = 'success') {
+    let toastEl = document.getElementById('toast');
+    toastEl.textContent = message;
+    toastEl.className = `toast show ${type}`;
+    setTimeout(() => toastEl.classList.remove('show'), 3000);
+  }
+
   // Set default date to today
   document.getElementById('recDate').valueAsDate = new Date();
 
@@ -157,25 +178,23 @@
     list.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">Loading...</div>';
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        list.innerHTML = '<div style="text-align:center; color:var(--muted);">Authentication error. Please log in again.</div>';
+        return;
+      }
       let items = [];
-      const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-      
-      if (mode === 'local') {
-        items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
-      } else {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        // Using a custom endpoint or storing in user settings for now if specific endpoint doesn't exist
-        // For simplicity in this demo, we'll simulate fetching from a 'recurring' endpoint
-        // If your backend doesn't have this, you might need to add it or use local storage fallback
-        try {
-            const res = await fetch(`${API_URL}/recurring`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (res.ok) items = await res.json();
-            else throw new Error('Endpoint not found');
-        } catch(e) {
-            // Fallback to local if API not ready
-            items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
-        }
+      try {
+          const res = await fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } });
+          if (res.ok) {
+              const data = await res.json();
+              items = data.recurringExpenses || [];
+          } else {
+              throw new Error('Failed to load from server');
+          }
+      } catch(e) {
+          console.error(e);
+          showToast("Failed to load from MongoDB", "error");
       }
 
       renderList(items);
@@ -200,7 +219,7 @@
         </div>
         <div style="display:flex; align-items:center;">
           <div class="rec-amount">₹${item.amount}</div>
-          <button class="btn-del" onclick="deleteRecurring('${item.id || item._id}', ${index})">×</button>
+          <button class="btn-del" onclick="deleteRecurring('${item.id}')">×</button>
         </div>
       </div>
     `).join('');
@@ -213,7 +232,7 @@
     const date = document.getElementById('recDate').value;
 
     if (!name || !amount || !date) {
-      alert("Please fill all fields");
+      showToast("Please fill all fields", "error");
       return;
     }
 
@@ -226,31 +245,32 @@
       active: true
     };
 
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    
-    if (mode === 'local') {
-      const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
-      items.push(newItem);
-      localStorage.setItem('recurringExpenses', JSON.stringify(items));
-      renderList(items);
-    } else {
-      // API logic here
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/recurring`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(newItem)
-        });
-        if(!res.ok) throw new Error('API Error');
-        loadRecurring();
-      } catch(e) {
-        // Fallback
-        const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
-        items.push(newItem);
-        localStorage.setItem('recurringExpenses', JSON.stringify(items));
-        renderList(items);
-      }
+    try {
+      const token = localStorage.getItem('token');
+      // 1. Fetch current preferences
+      const getRes = await fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!getRes.ok) throw new Error("Failed to fetch settings");
+      const prefs = await getRes.json();
+      
+      // 2. Append new item
+      const list = prefs.recurringExpenses || [];
+      list.push(newItem);
+      prefs.recurringExpenses = list;
+
+      // 3. Save back
+      const res = await fetch(`${API_URL}/preferences`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(prefs)
+      });
+
+      if (!res.ok) throw new Error("Failed to save");
+
+      showToast("Added successfully");
+      loadRecurring();
+    } catch(e) {
+      console.error(e);
+      showToast("Failed to save to cloud: " + e.message, "error");
     }
 
     // Clear form
@@ -258,33 +278,34 @@
     document.getElementById('recAmount').value = '';
   }
 
-  async function deleteRecurring(id, index) {
+  async function deleteRecurring(id) {
     if(!confirm("Stop tracking this recurring expense?")) return;
 
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    
-    if (mode === 'local') {
-      const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
-      items.splice(index, 1);
-      localStorage.setItem('recurringExpenses', JSON.stringify(items));
-      renderList(items);
-    } else {
-       try {
+    try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/recurring/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
+        // 1. Fetch current preferences
+        const getRes = await fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!getRes.ok) throw new Error("Failed to fetch settings");
+        const prefs = await getRes.json();
+
+        // 2. Filter out item
+        prefs.recurringExpenses = (prefs.recurringExpenses || []).filter(item => item.id !== id);
+
+        // 3. Save back
+        const res = await fetch(`${API_URL}/preferences`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(prefs)
         });
-        if(!res.ok) throw new Error('API Error');
+
+        if (!res.ok) throw new Error("Failed to delete");
+
+        showToast("Deleted successfully");
         loadRecurring();
       } catch(e) {
-        // Fallback
-        const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
-        items.splice(index, 1);
-        localStorage.setItem('recurringExpenses', JSON.stringify(items));
-        renderList(items);
+        console.error(e);
+        showToast("Failed to delete from cloud: " + e.message, "error");
       }
-    }
   }
 
   loadRecurring();

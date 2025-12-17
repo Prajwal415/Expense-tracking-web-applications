@@ -552,14 +552,20 @@
   }
 
   async function loadExpenses() {
+    const localExpenses = JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
+    const mode = localStorage.getItem('storageMode') || 'mongodb';
+    if (mode === 'local') return localExpenses;
+
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/expenses?limit=all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!res.ok) return [];
-      return await res.json();
-    } catch { return []; }
+      if (!res.ok) return localExpenses;
+      const serverExpenses = await res.json();
+      const validServerExpenses = Array.isArray(serverExpenses) ? serverExpenses : [];
+      return [...validServerExpenses, ...localExpenses];
+    } catch { return localExpenses; }
   }
 
   function getMonthStart() {

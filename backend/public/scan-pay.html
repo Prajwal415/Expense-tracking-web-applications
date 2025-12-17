@@ -309,7 +309,16 @@
         const data = await res.json();
         if (data.favorites) userFavorites = data.favorites;
         if (data.recents) {
-          localStorage.setItem('recentUPIPayments', JSON.stringify(data.recents));
+          // Merge server recents with local to prevent data loss
+          const localRecents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
+          const mergedMap = new Map();
+          data.recents.forEach(r => mergedMap.set(r.vpa, r));
+          localRecents.forEach(r => {
+            if (!mergedMap.has(r.vpa)) mergedMap.set(r.vpa, r);
+            else if (r.lastPaid > mergedMap.get(r.vpa).lastPaid) mergedMap.set(r.vpa, r);
+          });
+          const merged = Array.from(mergedMap.values()).sort((a, b) => b.lastPaid - a.lastPaid).slice(0, 10);
+          localStorage.setItem('recentUPIPayments', JSON.stringify(merged));
           renderRecentPayments();
         }
       }
@@ -585,6 +594,18 @@
     document.getElementById('paymentSuccessMsg').innerText = `₹${amount} paid to ${payee}`;
     successOverlay.style.display = 'flex';
 
+    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    if (mode === 'local') {
+      StorageManager.saveExpenseLocally(expense);
+      setTimeout(() => {
+        successOverlay.style.display = 'none';
+        showToast('Saved locally', 'success');
+      }, 2000);
+      if (upiId) addToRecentPayments(payee, upiId);
+      renderRecentPayments();
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/expenses`, {
@@ -628,13 +649,50 @@
   // --- Recent Payments ---
   async function addToRecentPayments(name, vpa) {
     if (!name || !vpa) return;
-    let recents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
+
+    // 1. Optimistic Local Update
+    let recents = [];
+    try {
+      recents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
+    } catch (e) {
+      recents = [];
+    }
     recents = recents.filter(r => r.vpa !== vpa);
     recents.unshift({ name, vpa, lastPaid: Date.now() });
-    if (recents.length > 10) recents.pop();
+    if (recents.length > 10) recents = recents.slice(0, 10);
     localStorage.setItem('recentUPIPayments', JSON.stringify(recents));
     renderRecentPayments();
-    await saveRecentPayments(recents);
+    
+    // 2. Background Sync
+    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    if (mode !== 'local') {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/settings`, { headers: { 'Authorization': `Bearer ${token}` } });
+        let serverRecents = [];
+        if (res.ok) {
+          const data = await res.json();
+          if (data.recents && Array.isArray(data.recents)) {
+            serverRecents = data.recents;
+          }
+        }
+        
+        // Merge: Server + Local (Local takes precedence for the just-added item)
+        const mergedMap = new Map();
+        recents.forEach(r => mergedMap.set(r.vpa, r)); // Add local first (newest)
+        serverRecents.forEach(r => {
+            if (!mergedMap.has(r.vpa)) mergedMap.set(r.vpa, r);
+        });
+        
+        const finalRecents = Array.from(mergedMap.values())
+            .sort((a, b) => b.lastPaid - a.lastPaid)
+            .slice(0, 10);
+            
+        localStorage.setItem('recentUPIPayments', JSON.stringify(finalRecents));
+        renderRecentPayments();
+        await saveRecentPayments(finalRecents);
+      } catch(e) { console.error("Sync error", e); }
+    }
   }
 
   function renderRecentPayments() {

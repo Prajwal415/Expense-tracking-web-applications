@@ -1164,25 +1164,29 @@ ${reportDiv.innerHTML}
 
   async function fetchExpenses() {
     const mode = localStorage.getItem('storageMode') || 'mongodb';
+    const localData = JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
+    const formattedLocal = localData.map(e => ({ ...e, amount: Number(e.amount) || 0, date: e.date || e.dateISO || new Date().toISOString() }));
+
     if (mode === 'local') {
-      const localData = JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
-      return localData.map(e => ({ ...e, amount: Number(e.amount) || 0, date: e.date || e.dateISO || new Date().toISOString() }));
+      return formattedLocal;
     }
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/expenses?limit=all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!response.ok) return [];
+      if (!response.ok) return formattedLocal;
       const data = await response.json();
-      return data.map(e => ({
+      const validData = Array.isArray(data) ? data : [];
+      const serverData = validData.map(e => ({
         ...e,
         amount: Number(e.amount) || 0,
         date: e.date || e.dateISO || new Date().toISOString()
       }));
+      return [...serverData, ...formattedLocal];
     } catch (e) {
       console.error('Error fetching expenses', e);
-      return [];
+      return formattedLocal;
     }
   }
 
