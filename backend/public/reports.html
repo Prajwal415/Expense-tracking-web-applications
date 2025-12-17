@@ -800,6 +800,16 @@
   }
   applyTheme();
 
+  function escapeHtml(text) {
+    if (!text) return text;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // ===== LISTEN FOR STORAGE CHANGES (from settings/profile pages) =====
   window.addEventListener('storage', function(e) {
     if (e.key === 'appTheme' || e.key === 'theme' || e.key === 'userTheme') {
@@ -1286,9 +1296,9 @@ ${reportDiv.innerHTML}
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${idx+1}</td>
-        <td><span class="badge">${e.category || '—'}</span></td>
+        <td><span class="badge">${escapeHtml(e.category) || '—'}</span></td>
         <td class="amount-cell">${formatCurrency(e.amount)}</td>
-        <td>${e.note ? e.note.replace(/</g,'&lt;') : '—'}</td>
+        <td>${escapeHtml(e.note) || '—'}</td>
         <td>${date}</td>
         <td>${time}</td>
       `;

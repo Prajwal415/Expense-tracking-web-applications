@@ -240,6 +240,16 @@
   const theme = localStorage.getItem("appTheme") || "light";
   document.documentElement.setAttribute("data-theme", theme);
 
+  function escapeHtml(text) {
+    if (!text) return text;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function showToast(message, type = 'success') {
     let toastEl = document.getElementById('toast');
     toastEl.textContent = message;
@@ -283,7 +293,7 @@
     favs.forEach(fav => {
       const chip = document.createElement('div');
       chip.style.cssText = 'font-size:11px; padding:6px 10px; background:var(--accent-soft); border-radius:99px; cursor:pointer; border:1px solid var(--border); display:flex; align-items:center; gap:4px; color:var(--accent); font-weight:600;';
-      chip.innerHTML = `<span>${fav.name}</span>`;
+      chip.innerHTML = `<span>${escapeHtml(fav.name)}</span>`;
       chip.onclick = () => {
         document.getElementById('payUpiId').value = fav.vpa;
         document.getElementById('payTo').value = fav.name;
@@ -508,13 +518,20 @@
   }
 
   function confirmPaymentFailed() {
+    const raw = sessionStorage.getItem('pendingPayment');
+    const data = raw ? JSON.parse(raw) : null;
     sessionStorage.removeItem('pendingPayment');
     document.getElementById('paymentConfirmModal').classList.remove('active');
     overlay.classList.remove('active');
-    showToast("Payment marked as failed", "error");
+    
+    if (data && confirm("Payment failed in UPI app. Do you want to record this as a manual expense instead?")) {
+      saveExpenseData(data, "Expense Recorded");
+    } else {
+      showToast("Payment cancelled", "error");
+    }
   }
 
-  async function saveExpenseData(data = null) {
+  async function saveExpenseData(data = null, customTitle = null) {
     let amount, payee, category, upiId;
     if (data) {
       amount = data.amount; payee = data.payee; category = data.category; upiId = data.upiId;
@@ -527,6 +544,11 @@
 
     closePayModal();
     const successOverlay = document.getElementById('paymentSuccessOverlay');
+    if (customTitle) {
+      successOverlay.querySelector('h2').innerText = customTitle;
+    } else {
+      successOverlay.querySelector('h2').innerText = "Payment Successful!";
+    }
     document.getElementById('paymentSuccessMsg').innerText = `₹${amount} paid to ${payee}`;
     successOverlay.style.display = 'flex';
 
@@ -585,8 +607,8 @@
     list.innerHTML = recents.map(r => `
       <div class="recent-item">
         <div class="recent-info">
-          <div>${r.name}</div>
-          <div>${r.vpa}</div>
+          <div>${escapeHtml(r.name)}</div>
+          <div>${escapeHtml(r.vpa)}</div>
         </div>
         <button class="btn btn-secondary" style="width:auto; padding: 6px 12px; font-size: 12px;" onclick="payAgain('${r.vpa}', '${r.name.replace(/'/g, "\\'")}')">Pay</button>
       </div>

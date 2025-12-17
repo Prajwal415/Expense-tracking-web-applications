@@ -868,6 +868,16 @@
     { code: "TZS", symbol: "TSh", name: "Tanzanian Shilling" }
   ];
 
+  function escapeHtml(text) {
+    if (!text) return text;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function showToast(message, type = 'success') {
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -1259,8 +1269,8 @@
             <div class="logo">FinFlow</div>
             <div class="meta">
               <div><strong>Statement Date:</strong> ${new Date().toLocaleDateString()}</div>
-              <div><strong>User:</strong> ${document.getElementById('displayName')?.value || 'User'}</div>
-              <div><strong>Email:</strong> ${document.getElementById('userEmailInput')?.value || ''}</div>
+              <div><strong>User:</strong> ${escapeHtml(document.getElementById('displayName')?.value) || 'User'}</div>
+              <div><strong>Email:</strong> ${escapeHtml(document.getElementById('userEmailInput')?.value) || ''}</div>
             </div>
           </div>
 
@@ -1302,8 +1312,8 @@
               ${expenses.slice(0, 100).map((e, i) => `
                 <tr>
                   <td>${new Date(e.date).toLocaleDateString()}</td>
-                  <td><span class="badge">${e.category}</span></td>
-                  <td>${e.note || '-'}</td>
+                  <td><span class="badge">${escapeHtml(e.category)}</span></td>
+                  <td>${escapeHtml(e.note) || '-'}</td>
                   <td class="amount">${symbol}${e.amount.toLocaleString()}</td>
                 </tr>
               `).join('')}
