@@ -210,9 +210,10 @@
     <h4>Payment Status</h4>
     <p style="color: var(--muted); margin-bottom: 20px;">Did the payment complete successfully in your UPI app?</p>
     
-    <div style="display: flex; gap: 10px;">
-      <button class="btn" onclick="confirmPaymentSuccess()" style="background: var(--success); color: white;">Yes, Successful</button>
-      <button class="btn" onclick="confirmPaymentFailed()" style="background: var(--danger); color: white;">No, Failed</button>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="btn" onclick="confirmPaymentSuccess()" style="background: var(--success); color: white; width: 100%;">Yes, Successful</button>
+      <button class="btn" onclick="recordManualExpense()" style="background: var(--accent); color: white; width: 100%;">Failed, but Record Expense</button>
+      <button class="btn btn-secondary" onclick="confirmPaymentCancelled()" style="width: 100%;">Cancelled</button>
     </div>
   </div>
 </div>
@@ -517,18 +518,23 @@
     sessionStorage.removeItem('pendingPayment');
   }
 
-  function confirmPaymentFailed() {
+  function recordManualExpense() {
     const raw = sessionStorage.getItem('pendingPayment');
     const data = raw ? JSON.parse(raw) : null;
     sessionStorage.removeItem('pendingPayment');
     document.getElementById('paymentConfirmModal').classList.remove('active');
     overlay.classList.remove('active');
     
-    if (data && confirm("Payment failed in UPI app. Do you want to record this as a manual expense instead?")) {
+    if (data) {
       saveExpenseData(data, "Expense Recorded");
-    } else {
-      showToast("Payment cancelled", "error");
     }
+  }
+
+  function confirmPaymentCancelled() {
+    sessionStorage.removeItem('pendingPayment');
+    document.getElementById('paymentConfirmModal').classList.remove('active');
+    overlay.classList.remove('active');
+    showToast("Payment cancelled", "info");
   }
 
   async function saveExpenseData(data = null, customTitle = null) {
