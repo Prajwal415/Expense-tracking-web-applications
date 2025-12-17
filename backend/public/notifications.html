@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <title>Notifications — Expense Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #3f67e6;
+      --accent-soft: #e0e7ff;
+      --accent-dark: #2949c0;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --info: #0ea5e9;
+      --muted: #6b7280;
+      --text: #0b2340;
+      --text-soft: #9ca3af;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      --radius-lg: 18px;
+      --radius-sm: 10px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #020617;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-soft: #0b1120;
+      --accent-dark: #2563eb;
+      --danger: #f97373;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --info: #38bdf8;
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --text-soft: #6b7280;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(139,92,246,0.18), transparent 55%),
+                  var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span {
+      font-size: 28px;
+    }
+
+    .back-link {
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid rgba(148,163,184,0.25);
+      font-size: 13px;
+    }
+
+    .back-link:hover {
+      background: rgba(148,163,184,0.2);
+    }
+
+    .settings-pill {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .settings-pill span {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 18px 18px 20px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(96,165,250,0.12), transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all var(--transition);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(148,163,184,0.14);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      box-shadow: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .notification-item {
+      background: linear-gradient(135deg, rgba(96,165,250,0.08), rgba(139,92,246,0.08));
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      position: relative;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .notification-item.success {
+      border-left-color: var(--success);
+      background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.04));
+    }
+
+    .notification-item.warning {
+      border-left-color: var(--warning);
+      background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04));
+    }
+
+    .notification-item.danger {
+      border-left-color: var(--danger);
+      background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.04));
+    }
+
+    .notification-item.info {
+      border-left-color: var(--info);
+      background: linear-gradient(135deg, rgba(14,165,233,0.08), rgba(14,165,233,0.04));
+    }
+
+    .notification-item.read {
+      opacity: 0.6;
+    }
+
+    .notification-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .notification-content {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .notification-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .notification-time {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .notification-message {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .notification-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .notification-actions button {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .empty-state-text {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all var(--transition);
+    }
+
+    .filter-tab:hover {
+      background: rgba(148,163,184,0.08);
+    }
+
+    .filter-tab.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(96,165,250,0.1), rgba(139,92,246,0.1));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .notification-item {
+        flex-direction: column;
+      }
+
+      .notification-actions {
+        width: 100%;
+      }
+
+      .notification-actions button {
+        flex: 1;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="back-link" href="dashboard.html" data-i18n="backToDashboard">← Back to Dashboard</a>
+      <h1 data-i18n="notificationsTitle"><span>🔔</span> Notifications</h1>
+    </div>
+    <div class="settings-pill">
+      Theme: <span id="themeLabel">Light</span> · Currency: <span id="currencyLabel">INR</span>
+    </div>
+  </header>
+
+  <!-- ============ STATS ============ -->
+  <section class="card" id="statsSection" style="display: none;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">📊 Notification Stats</div>
+        <div class="muted">Overview of your notifications</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statUnread" style="color: var(--info);">0</div>
+        <div class="stat-label">Unread</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statWarning" style="color: var(--warning);">0</div>
+        <div class="stat-label">Warnings</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statAlerts" style="color: var(--danger);">0</div>
+        <div class="stat-label">Alerts</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACTION BAR ============ -->
+  <section class="card">
+    <div class="action-bar">
+      <button class="btn btn-secondary" onclick="markAllAsRead()" data-i18n="markAllRead">✓ Mark All as Read</button>
+      <button class="btn btn-secondary" onclick="deleteAllNotifications()">🗑️ Delete All</button>
+    </div>
+
+    <!-- ============ FILTER TABS ============ -->
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterNotifications(event, 'all')">All</button>
+      <button class="filter-tab" onclick="filterNotifications(event, 'unread')">Unread <span class="badge" id="unreadBadge">0</span></button>
+      <button class="filter-tab" onclick="filterNotifications(event, 'success')">✓ Success</button>
+      <button class="filter-tab" onclick="filterNotifications(event, 'warning')">⚡ Warnings</button>
+      <button class="filter-tab" onclick="filterNotifications(event, 'danger')">🚨 Alerts</button>
+      <button class="filter-tab" onclick="filterNotifications(event, 'info')">ℹ️ Info</button>
+    </div>
+
+    <!-- ============ NOTIFICATIONS LIST ============ -->
+    <div id="notificationsContainer"></div>
+  </section>
+</div>
+
+<script>
+  const SETTINGS_KEY = "userSettings";
+  const NOTIFICATIONS_KEY = "userNotifications";
+  const EXPENSES_KEY = "userExpenses";
+  const GOALS_KEY = "userGoals";
+  const API_BASE = (window.location.port && window.location.port !== '5003')
+    ? `http://${window.location.hostname}:5003` 
+    : '';
+  const API_URL = `${API_BASE}/api`;
+
+  const CURRENCY_SYMBOLS = {
+    INR: "₹", USD: "$", EUR: "€", GBP: "£", JPY: "¥", AUD: "A$", CAD: "C$"
+  };
+
+  let globalSettings = {};
+
+  function getCurrencySymbol() {
+    const c = globalSettings.currency || "INR";
+    return CURRENCY_SYMBOLS[c] || c + " ";
+  }
+
+  async function applySettingsToPage() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        globalSettings = await res.json();
+      }
+    } catch (e) { console.error("Failed to load settings", e); }
+
+    const theme = localStorage.getItem("appTheme") || "light";
+    const currency = globalSettings.currency || "INR";
+    document.documentElement.setAttribute("data-theme", theme);
+    document.getElementById("themeLabel").innerText = theme === "dark" ? "Dark" : "Light";
+    document.getElementById("currencyLabel").innerText = currency;
+    renderNotifications('all');
+    generateNotificationsFromExpenses();
+  }
+
+  function getHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  }
+
+  async function loadNotifications() {
+    try {
+      const res = await fetch(`${API_URL}/notifications`, { headers: getHeaders() });
+      if (res.ok) return await res.json();
+      return [];
+    } catch { return []; }
+  }
+
+  async function addNotification(type, title, message, data = {}) {
+    const notification = {
+      type,
+      title,
+      message,
+      data
+    };
+    try {
+      await fetch(`${API_URL}/notifications`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(notification)
+      });
+      renderNotifications('all');
+    } catch (e) { console.error(e); }
+  }
+
+  async function deleteNotification(id) {
+    try {
+      await fetch(`${API_URL}/notifications/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      renderNotifications('all');
+    } catch (e) { console.error(e); }
+  }
+
+  async function markAsRead(id) {
+    try {
+      await fetch(`${API_URL}/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: getHeaders()
+      });
+      renderNotifications('all');
+    } catch (e) { console.error(e); }
+  }
+
+  async function markAllAsRead() {
+    try {
+      await fetch(`${API_URL}/notifications/read-all`, {
+        method: 'PUT',
+        headers: getHeaders()
+      });
+      renderNotifications('all');
+    } catch (e) { console.error(e); }
+  }
+
+  async function deleteAllNotifications() {
+    if (confirm("Delete all notifications? This cannot be undone.")) {
+      try {
+        await fetch(`${API_URL}/notifications`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+        renderNotifications('all');
+      } catch (e) { console.error(e); }
+    }
+  }
+
+  function getTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - new Date(date);
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return new Date(date).toLocaleDateString("en-IN");
+  }
+
+  function getNotificationIcon(type) {
+    const icons = {
+      success: "✅",
+      warning: "⚡",
+      danger: "🚨",
+      info: "ℹ️",
+      goal: "🎯",
+      budget: "💰",
+      expense: "📌",
+      achievement: "🏆"
+    };
+    return icons[type] || "📢";
+  }
+
+  async function renderNotifications(filter = 'all') {
+    const notifications = await loadNotifications();
+    const container = document.getElementById("notificationsContainer");
+
+    let filtered = notifications;
+    if (filter !== 'all') {
+      if (filter === 'unread') {
+        filtered = notifications.filter(n => !n.read);
+      } else {
+        filtered = notifications.filter(n => n.type === filter);
+      }
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-text">
+            ${filter === 'unread' ? 'No unread notifications' : 'No notifications yet. Start tracking your expenses!'}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    updateStats(notifications);
+
+    container.innerHTML = filtered.map(notif => `
+      <div class="notification-item ${notif.type} ${notif.read ? 'read' : ''}" id="notif-${notif._id}">
+        <div class="notification-icon">${getNotificationIcon(notif.type)}</div>
+        <div class="notification-content">
+          <div class="notification-title">
+            ${notif.title}
+          </div>
+          <div class="notification-message">${notif.message}</div>
+          <div class="notification-time">${getTimeAgo(notif.createdAt)}</div>
+        </div>
+        <div class="notification-actions">
+          ${!notif.read ? `<button class="btn btn-secondary" onclick="markAsRead('${notif._id}')">Mark Read</button>` : ''}
+          <button class="btn btn-danger" onclick="deleteNotification('${notif._id}')">Delete</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function updateStats(notifications) {
+    const unread = notifications.filter(n => !n.read).length;
+    const warnings = notifications.filter(n => n.type === 'warning').length;
+    const alerts = notifications.filter(n => n.type === 'danger').length;
+
+    document.getElementById("statTotal").innerText = notifications.length;
+    document.getElementById("statUnread").innerText = unread;
+    document.getElementById("statWarning").innerText = warnings;
+    document.getElementById("statAlerts").innerText = alerts;
+    document.getElementById("unreadBadge").innerText = unread;
+
+    if (notifications.length > 0) {
+      document.getElementById("statsSection").style.display = "block";
+    }
+  }
+
+  function filterNotifications(event, filter) {
+    if (event) {
+      document.querySelectorAll(".filter-tab").forEach(tab => tab.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+    renderNotifications(filter);
+  }
+
+  async function generateNotificationsFromExpenses() {
+    const token = localStorage.getItem('token');
+    let expenses = [];
+    let goals = [];
+
+    try {
+      const [expRes, goalRes] = await Promise.all([
+        fetch(`${API_URL}/expenses`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/goals`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      if (expRes.ok) expenses = await expRes.json();
+      if (goalRes.ok) goals = await goalRes.json();
+    } catch (e) { console.error(e); return; }
+
+    const notifications = await loadNotifications();
+
+    const today = new Date().toLocaleDateString();
+    const existingToday = notifications.filter(n => 
+      new Date(n.createdAt).toLocaleDateString() === today
+    ).length;
+
+    if (expenses.length > 0) {
+      const lastExpense = expenses[0];
+      const symbol = getCurrencySymbol();
+      
+      const alreadyNotified = notifications.some(n => n.data && n.data.expense && n.data.expense._id === lastExpense._id);
+
+      if (!alreadyNotified) {
+        addNotification(
+          'success',
+          'Expense Added',
+          `You spent ${symbol}${lastExpense.amount.toLocaleString('en-IN')} on ${lastExpense.category}`,
+          { expense: lastExpense }
+        );
+      }
+
+      goals.forEach(goal => {
+        const goalNotifiedToday = notifications.some(n => 
+          n.data && n.data.goal && n.data.goal._id === goal._id && 
+          new Date(n.createdAt).toLocaleDateString() === today
+        );
+        if (goalNotifiedToday) return;
+
+        const spent = expenses
+          .filter(e => e.category === goal.category)
+          .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+        if (spent > goal.amount) {
+          addNotification(
+            'danger',
+            'Budget Exceeded',
+            `${goal.category} budget of ${symbol}${goal.amount.toLocaleString('en-IN')} has been exceeded!`,
+            { goal }
+          );
+        } else if (spent > (goal.amount * 0.8)) {
+          addNotification(
+            'warning',
+            'Budget Warning',
+            `${goal.category} spending is at ${((spent/goal.amount)*100).toFixed(0)}% of your budget`,
+            { goal }
+          );
+        }
+      });
+    }
+  }
+
+  window.markAsRead = markAsRead;
+  window.deleteNotification = deleteNotification;
+  window.markAllAsRead = markAllAsRead;
+  window.deleteAllNotifications = deleteAllNotifications;
+  window.filterNotifications = filterNotifications;
+  window.addNotification = addNotification;
+
+  applySettingsToPage();
+</script>
+<script src="translations.js"></script>
+</body>
+</html>

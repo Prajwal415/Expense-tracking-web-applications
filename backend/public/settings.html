@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <title>Settings —</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #3f67e6;
+      --accent-soft: #e0e7ff;
+      --accent-dark: #2949c0;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --muted: #6b7280;
+      --text: #0b2340;
+      --text-soft: #9ca3af;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      
+      /* Mappings for existing classes */
+      --color-primary: var(--text);
+      --color-muted: var(--muted);
+      --color-border: var(--border);
+      --color-white: #ffffff;
+      --gradient-primary: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: var(--shadow);
+      --shadow-lg: 0 18px 45px rgba(15, 23, 42, 0.16);
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #020617;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-soft: #0b1120;
+      --accent-dark: #2563eb;
+      --danger: #f97373;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --text-soft: #6b7280;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(139,92,246,0.18), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    /* HEADER ------------------------------------------------- */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-white);
+      font-size: 20px;
+      box-shadow: 0 10px 25px rgba(79, 70, 229, 0.30);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-text span:first-child {
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .brand-text span:last-child {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      box-shadow: var(--shadow-sm);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+    }
+
+    .back-link span.icon {
+      font-size: 16px;
+    }
+
+    .back-link:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      filter: brightness(0.95);
+    }
+
+    /* PAGE TITLE --------------------------------------------- */
+    .page-header {
+      margin: 18px 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .page-header h1 {
+      font-size: 30px;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .page-header p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+    }
+
+    .tag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--color-success);
+      box-shadow: 0 0 0 4px rgba(16,185,129,0.25);
+    }
+
+    /* GRID --------------------------------------------------- */
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    /* CARDS -------------------------------------------------- */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      padding: 18px 18px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at top right, rgba(129, 140, 248, 0.12), transparent 60%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-normal);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .card-title span.icon {
+      font-size: 18px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid transparent;
+    }
+
+    .card-body {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* FORMS -------------------------------------------------- */
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .field {
+      margin-bottom: 8px;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 14px;
+      outline: none;
+      background: var(--card);
+      color: var(--text);
+      transition: all var(--transition-fast);
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(63, 103, 230, 0.1);
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* BUTTONS ----------------------------------------------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-ghost {
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+
+    .btn-ghost:hover {
+      background: var(--border);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: rgba(248,113,113,0.08);
+      color: var(--color-danger);
+    }
+
+    .btn-danger:hover {
+      background: rgba(248,113,113,0.16);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .btn-icon {
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+
+    /* SWITCH ------------------------------------------------- */
+    .switch {
+      position: relative;
+      width: 38px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(148, 163, 184, 0.65);
+      transition: .2s;
+      border-radius: 999px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.25);
+    }
+
+    .switch input:checked + .slider {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+
+    .switch input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    /* CATEGORY LIST ----------------------------------------- */
+    .category-list {
+      margin-top: 6px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(148, 163, 184, 0.7);
+      padding: 8px;
+      max-height: 190px;
+      overflow: auto;
+      background: var(--bg);
+    }
+
+    .category-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-bottom: 4px;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .category-item span.name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .category-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .pill-muted {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.13);
+      color: var(--muted);
+    }
+
+    /* INLINE META ------------------------------------------- */
+    .setting-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .setting-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .setting-label span:last-child {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* TOAST -------------------------------------------------- */
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.98);
+      color: white;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 16px 40px rgba(22,163,74,0.45);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: all var(--transition-normal);
+      z-index: 50;
+    }
+
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .toast span.icon {
+      font-size: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .wrapper {
+        padding-inline: 12px;
+      }
+
+      .card {
+        border-radius: 14px;
+      }
+
+      .page-header h1 {
+        font-size: 24px;
+      }
+
+      .grid {
+        gap: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-logo">💰</div>
+        <div class="brand-text">
+          <span data-i18n="settingsTitle"> Settings</span>
+          <span data-i18n="settingsDesc">Tune how your money app behaves</span>
+        </div>
+      </div>
+      <a href="dashboard.html" class="back-link">
+        <span class="icon">←</span>
+        <span data-i18n="backToDashboard">Back to Dashboard</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="wrapper">
+    <div class="page-header">
+      <div>
+        <h1 data-i18n="controlCentre">Control Centre</h1>
+        <p></p>
+      </div>
+      <div class="tag">
+        <span class="tag-dot"></span>
+        <span>Local only · No cloud sync</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT COLUMN -->
+      <section class="left">
+        <!-- Language Settings -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">🌐</span>
+                <span data-i18n="languageTitle">Language / भाषा</span>
+              </div>
+              <div class="card-subtitle" data-i18n="languageSubtitle">Select your preferred language</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="field">
+              <select id="languageSelect"><option>Loading...</option></select>
+              <div class="setting-meta">The page will reload automatically after selection.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile & Identity -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">👤</span>
+                <span data-i18n="profileTitle">Profile & Identity</span>
+              </div>
+              <div class="card-subtitle" data-i18n="profileSubtitle">
+                Your name, email, and avatar
+              </div>
+            </div>
+            <span class="chip">Cloud Synced</span>
+          </div>
+
+          <div class="card-body">
+            <div class="field">
+              <label for="emailInput">Email address</label>
+              <input id="emailInput" type="text" placeholder="alex.chen@example.com" />
+              <div class="setting-meta">Used for login and password resets.</div>
+            </div>
+            <div class="field-row">
+              <div class="field" style="flex: 1 1 60%;">
+                <label for="displayNameInput">Display name</label>
+                <input id="displayNameInput" type="text" placeholder="Alex Chen" />
+                <div class="setting-meta">.</div>
+              </div>
+              <div class="field" style="flex: 1 1 30%;">
+                <label for="avatarInitialInput">Avatar initial</label>
+                <input id="avatarInitialInput" type="text" maxlength="2" placeholder="AC" />
+                <div class="setting-meta">.</div>
+              </div>
+            </div>
+
+            <button id="saveProfileBtn" class="btn btn-primary">
+              <span data-i18n="saveProfile">💾 Save profile</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Money & Plans -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">💸</span>
+                <span data-i18n="moneyTitle">Money & Plan Settings</span>
+              </div>
+              <div class="card-subtitle">
+                
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="field-row">
+              <div class="field" style="flex: 1 1 60%;">
+                <label for="salarySettingsInput">Monthly salary (₹)</label>
+                <input id="salarySettingsInput" type="number" min="0" placeholder="e.g. 50,000" inputmode="numeric" />
+                <div class="setting-meta"></div>
+              </div>
+              <div class="field" style="flex: 1 1 40%; align-self: flex-end;">
+                <button id="saveSalarySettingsBtn" class="btn btn-primary">
+                  <span data-i18n="saveSalary">💾 Save salary</span>
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-top: 4px;">
+              <div class="setting-label">
+                <span>Current plan snapshot</span>
+                <span id="planStatusLabel">No plan saved</span>
+              </div>
+              <div class="setting-meta" id="planSummaryText" style="margin-top: 4px;">
+                —
+              </div>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <button id="resetPlanBtn" class="btn btn-ghost btn-sm">
+                <span>🧹 Clear saved plan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">🏷️</span>
+                <span data-i18n="categoriesTitle">Expense Categories</span>
+              </div>
+              <div class="card-subtitle">
+               
+              </div>
+            </div>
+            <span class="chip" id="categoryCountChip">0 categories</span>
+          </div>
+
+          <div class="card-body">
+            <div class="field-row">
+              <div class="field" style="flex: 1 1 70%;">
+                <label for="newCategoryInput">Add category</label>
+                <input id="newCategoryInput" type="text" placeholder="e.g. Groceries, Freelance, Gym" />
+              </div>
+              <div class="field" style="flex: 1 1 30%; align-self: flex-end;">
+                <button id="addCategoryBtn" class="btn btn-primary btn-sm">
+                  <span data-i18n="addBtn">＋ Add</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="category-list" id="categoryList">
+              <!-- populated via JS -->
+            </div>
+
+            <div class="setting-meta" style="margin-top: 6px;">
+              
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN -->
+      <section class="right">
+        <!-- Dashboard Behaviour -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">📊</span>
+                <span data-i18n="dashboardTitle">Dashboard Behaviour</span>
+              </div>
+              <div class="card-subtitle">
+                
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="field">
+              <label for="defaultTabSelect">Default dashboard tab</label>
+              <select id="defaultTabSelect">
+                <option value="add">➕ Add Expense</option>
+                <option value="track">📊 Track Spending</option>
+                <option value="goals">🎯 Goals</option>
+              </select>
+            </div>
+            <div class="setting-meta">
+              
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">🔔</span>
+                <span data-i18n="notificationsTitle">Notification Preferences</span>
+              </div>
+              <div class="card-subtitle">
+                
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <div class="setting-label">
+                  <span>Monthly spending summary</span>
+                  <span><code></code></span>
+                </div>
+                <label class="switch">
+                  <input id="notifyMonthly" type="checkbox">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <div class="setting-label">
+                  <span>Goal progress nudges</span>
+                  <span> <code></code></span>
+                </div>
+                <label class="switch">
+                  <input id="notifyGoals" type="checkbox">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <div class="setting-label">
+                  <span>Product & feature tips</span>
+                  <span> <code></code></span>
+                </div>
+                <label class="switch">
+                  <input id="notifyTips" type="checkbox">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security & Data -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="icon">🛡️</span>
+                <span data-i18n="securityTitle">Security & Data</span>
+              </div>
+              <div class="card-subtitle">
+                
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="field">
+              <div class="setting-label">
+                <span>Export Data</span>
+              </div>
+              <button id="emailDataBtn" class="btn btn-secondary btn-sm" style="margin-top:8px;">
+                <span>📧 Email my data</span>
+              </button>
+            </div>
+
+            <div class="field" style="margin-top: 10px;">
+              <div class="setting-label">
+                <span>Clear Data</span>
+              </div>
+              <button id="clearDataBtn" class="btn btn-danger btn-sm" style="margin-top:8px;">
+                <span>🧨 Clear local data</span>
+              </button>
+            </div>
+
+            <div class="field" style="margin-top: 10px;">
+              <div class="setting-label">
+                <span>Sign out on this device</span>
+                
+              </div>
+              <button id="signOutBtn" class="btn btn-ghost btn-sm" style="margin-top:8px;">
+                <span>🚪</span> <span data-i18n="signOut">Sign out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+      <span class="icon">✅</span>
+      <span id="toastMessage">Saved</span>
+    </div>
+  </main>
+
+  <script>
+    // =========================================================
+    // AUTH CHECK
+    // =========================================================
+    const CURRENT_KEY = 'currentUser';
+    if (!localStorage.getItem(CURRENT_KEY)) {
+      window.location.href = 'index.html';
+    }
+
+    // =========================================================
+    // CONSTANT KEYS
+    // =========================================================
+    // Initialize preferences object early
+    let userPreferences = {
+      defaultDashboardTab: 'add',
+      notifyMonthlySummary: false,
+      notifyGoals: false,
+      notifyTips: false,
+      language: 'en'
+    };
+
+    const SALARY_KEY = 'salary';
+    const PLAN_KEY = 'planData';
+    const EXPENSES_KEY = 'userExpenses';
+    const CATEGORIES_KEY = 'userCategories';
+    const DASHBOARD_STATE_KEY = 'dashboardState';
+    const THEME_KEY = 'appTheme';
+    const DEFAULT_TAB_KEY = 'defaultDashboardTab';
+    const USER_PROFILE_KEY = 'userProfile';
+    const NOTIFY_MONTHLY_KEY = 'notifyMonthlySummary';
+    const NOTIFY_GOALS_KEY = 'notifyGoals';
+    const NOTIFY_TIPS_KEY = 'notifyTips';
+    const STORAGE_MODE_KEY = 'storageMode';
+    // Fix: Allow connection from IP addresses (mobile) by checking port only
+    const API_BASE = (window.location.port && window.location.port !== '5003')
+      ? `http://${window.location.hostname}:5003` 
+      : '';
+    const API_URL = `${API_BASE}/api`;
+
+    const DEFAULT_CATEGORIES = [
+      'Food', 'Rent', 'Travel', 'Vehicle loan',
+      'Home loan', 'Education', 'Entertainment',
+      'Shopping', 'Utilities', 'Other'
+    ];
+
+    // =========================================================
+    // UTIL: TOAST
+    // =========================================================
+    const toastEl = document.getElementById('toast');
+    const toastMsgEl = document.getElementById('toastMessage');
+
+    function showToast(message) {
+      toastMsgEl.textContent = message;
+      toastEl.classList.add('show');
+      setTimeout(() => {
+        toastEl.classList.remove('show');
+      }, 1800);
+    }
+
+    // =========================================================
+    // THEME
+    // =========================================================
+    function initTheme() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+
+    // =========================================================
+    // PROFILE
+    // =========================================================
+    const displayNameInput = document.getElementById('displayNameInput');
+    const avatarInitialInput = document.getElementById('avatarInitialInput');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+    async function initProfile() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const user = data.user;
+          if (user.name) displayNameInput.value = user.name;
+          // Avatar initial is usually derived, but if stored:
+          if (user.email) emailInput.value = user.email;
+          avatarInitialInput.value = user.avatarInitial || (user.name ? user.name.charAt(0).toUpperCase() : '');
+        }
+      } catch (e) {
+        console.error('Error loading profile', e);
+      }
+    }
+
+    async function saveProfile() {
+      const name = displayNameInput.value.trim() || 'Alex Chen';
+      const email = emailInput.value.trim();
+      let avatarInitial = avatarInitialInput.value.trim();
+      if (!avatarInitial) avatarInitial = name.charAt(0).toUpperCase();
+      if (avatarInitial.length > 2) avatarInitial = avatarInitial.slice(0, 2);
+
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_URL}/auth/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ name, email, avatarInitial })
+        });
+        showToast('Profile saved');
+      } catch (e) {
+        console.error(e);
+        alert('Failed to save profile');
+      }
+    }
+
+    saveProfileBtn.addEventListener('click', saveProfile);
+
+    // =========================================================
+    // SALARY & PLAN
+    // =========================================================
+    const salarySettingsInput = document.getElementById('salarySettingsInput');
+    const saveSalarySettingsBtn = document.getElementById('saveSalarySettingsBtn');
+    const planStatusLabel = document.getElementById('planStatusLabel');
+    const planSummaryText = document.getElementById('planSummaryText');
+    const resetPlanBtn = document.getElementById('resetPlanBtn');
+
+    async function initSalaryAndPlan() {
+      const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+      if (mode === 'local') {
+        const salary = localStorage.getItem('local_salary') || '';
+        salarySettingsInput.value = salary;
+        
+        const rawPlan = localStorage.getItem('local_planData');
+        if (rawPlan) {
+          const p = JSON.parse(rawPlan);
+          planStatusLabel.textContent = 'Plan active (Local)';
+          const invPct = p.investPercent ?? '—';
+          const savPct = p.savePercent ?? '—';
+          const essPct = p.essentialPercent ?? '—';
+          planSummaryText.textContent = `Invest ${invPct}%, Save ${savPct}%, Essentials ${essPct}%`;
+        } else {
+          planStatusLabel.textContent = 'No plan saved (Local)';
+          planSummaryText.textContent = 'Use the dashboard to set a plan.';
+        }
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/settings`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const salary = data.salary || '';
+          salarySettingsInput.value = salary;
+
+          const p = data.planData;
+          if (p) {
+          planStatusLabel.textContent = 'Plan active';
+          const invPct = p.investPercent ?? '—';
+          const savPct = p.savePercent ?? '—';
+          const essPct = p.essentialPercent ?? '—';
+          const invAmt = p.investAmount ?? 0;
+          const savAmt = p.saveAmount ?? 0;
+          const essAmt = p.essentialAmount ?? 0;
+          planSummaryText.textContent =
+            `Invest ${invPct}% (₹${invAmt.toLocaleString('en-IN')}), ` +
+            `Save ${savPct}% (₹${savAmt.toLocaleString('en-IN')}), ` +
+            `Essentials ${essPct}% (₹${essAmt.toLocaleString('en-IN')})`;
+          } else {
+            planStatusLabel.textContent = 'No plan saved';
+            planSummaryText.textContent = 'Use the dashboard to set a plan.';
+          }
+        }
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    }
+
+    async function saveSalarySettings() {
+      const val = Number(salarySettingsInput.value);
+      if (isNaN(val) || val < 0) {
+        alert('Please enter a valid salary amount.');
+        return;
+      }
+      const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+      if (mode === 'local') {
+        localStorage.setItem('local_salary', Math.round(val));
+        showToast('Salary saved locally');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_URL}/auth/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ salary: Math.round(val) })
+        });
+        showToast('Salary saved');
+      } catch (e) {
+        alert('Failed to save salary');
+      }
+    }
+
+    async function resetPlan() {
+      if (!confirm('Clear your saved plan data? You can always create a new plan from the dashboard.')) {
+        return;
+      }
+      const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+      if (mode === 'local') {
+        localStorage.removeItem('local_planData');
+        initSalaryAndPlan();
+        showToast('Local plan cleared');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_URL}/auth/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ planData: null })
+        });
+        localStorage.removeItem(PLAN_KEY);
+        initSalaryAndPlan();
+        showToast('Plan cleared');
+      } catch (e) {
+        alert('Failed to clear plan');
+      }
+    }
+
+    saveSalarySettingsBtn.addEventListener('click', saveSalarySettings);
+    resetPlanBtn.addEventListener('click', resetPlan);
+
+    // =========================================================
+    // CATEGORIES
+    // =========================================================
+    const categoryListEl = document.getElementById('categoryList');
+    const newCategoryInput = document.getElementById('newCategoryInput');
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    const categoryCountChip = document.getElementById('categoryCountChip');
+
+    async function getStoredCategories() {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/settings/categories`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return [...DEFAULT_CATEGORIES];
+        const data = await res.json();
+        return data.categories && data.categories.length ? data.categories : [...DEFAULT_CATEGORIES];
+      } catch (e) {
+        console.error('Error parsing categories', e);
+        return [...DEFAULT_CATEGORIES];
+      }
+    }
+
+    async function renderCategories() {
+      const categories = await getStoredCategories();
+      categoryListEl.innerHTML = '';
+      categoryCountChip.textContent = `${categories.length} categories`;
+
+      if (!categories.length) {
+        const div = document.createElement('div');
+        div.className = 'setting-meta';
+        div.textContent = 'No categories yet. Add your first one above.';
+        categoryListEl.appendChild(div);
+        return;
+      }
+
+      categories.forEach((cat, index) => {
+        const item = document.createElement('div');
+        item.className = 'category-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = cat;
+
+        const actions = document.createElement('div');
+        actions.className = 'category-actions';
+
+        if (index < DEFAULT_CATEGORIES.length && DEFAULT_CATEGORIES.includes(cat)) {
+          const pill = document.createElement('span');
+          pill.className = 'pill-muted';
+          pill.textContent = 'default';
+          actions.appendChild(pill);
+        }
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger btn-sm btn-icon';
+        deleteBtn.type = 'button';
+        deleteBtn.textContent = '✕';
+        deleteBtn.title = 'Remove category';
+
+        deleteBtn.addEventListener('click', async () => {
+          const token = localStorage.getItem('token');
+          await fetch(`${API_URL}/settings/categories/${cat}`, { // Assuming endpoint supports delete by name or ID
+             method: 'DELETE',
+             headers: { 'Authorization': `Bearer ${token}` }
+          });
+          // For now, just re-render or assume success if API existed
+          await renderCategories();
+          showToast('Category removed');
+        });
+
+        actions.appendChild(deleteBtn);
+        item.appendChild(nameSpan);
+        item.appendChild(actions);
+        categoryListEl.appendChild(item);
+      });
+    }
+
+    async function addCategory() {
+      const val = newCategoryInput.value.trim();
+      if (!val) {
+        alert('Type a category name first.');
+        return;
+      }
+      let categories = await getStoredCategories();
+      if (categories.includes(val)) {
+        showToast('Category already exists');
+        newCategoryInput.value = '';
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      await fetch(`${API_URL}/settings/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ category: val })
+      });
+
+      newCategoryInput.value = '';
+      await renderCategories();
+      showToast('Category added');
+    }
+
+    addCategoryBtn.addEventListener('click', addCategory);
+    newCategoryInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCategory();
+      }
+    });
+
+    // =========================================================
+    // LANGUAGE SETTINGS
+    // =========================================================
+    const langSelectEl = document.getElementById('languageSelect');
+
+    const FRONTEND_LANGUAGES = [
+      { code: 'en', name: 'English' },
+      { code: 'hi', name: 'Hindi (हिंदी)' },
+      { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
+      { code: 'ta', name: 'Tamil (தமிழ்)' },
+      { code: 'te', name: 'Telugu (తెలుగు)' },
+      { code: 'ml', name: 'Malayalam (മലയാളം)' },
+      { code: 'mr', name: 'Marathi (मराठी)' },
+      { code: 'od', name: 'Odia (ଓଡ଼ିଆ)' },
+      { code: 'bn', name: 'Bengali (বাংলা)' },
+      { code: 'gu', name: 'Gujarati (ગુજરાતી)' },
+      { code: 'pa', name: 'Punjabi (ਪੰਜਾਬੀ)' },
+      { code: 'as', name: 'Assamese (অসমীয়া)' }
+    ];
+
+    function populateLanguageDropdown(languages, selectedCode) {
+      if (!langSelectEl) return;
+      langSelectEl.innerHTML = '';
+      languages.forEach(lang => {
+        const option = document.createElement('option');
+        option.value = lang.code;
+        option.textContent = lang.name;
+        if (lang.code === selectedCode) option.selected = true;
+        langSelectEl.appendChild(option);
+      });
+    }
+
+    // Immediate population to fix "Loading..." issue
+    if (langSelectEl) {
+      populateLanguageDropdown(FRONTEND_LANGUAGES, (typeof userPreferences !== 'undefined' ? userPreferences.language : 'en'));
+    }
+
+    async function initLanguage() {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/settings`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const languages = (data.supportedLanguages && data.supportedLanguages.length) ? data.supportedLanguages : FRONTEND_LANGUAGES;
+          const currentLang = (data.preferences && data.preferences.language) ? data.preferences.language : 'en';
+
+          populateLanguageDropdown(languages, currentLang);
+          applyTranslations(currentLang);
+          
+          // Sync DB preference to local storage so other pages pick it up
+          localStorage.setItem('appLanguage', currentLang);
+          
+          // Update global preferences object so other saves don't overwrite language
+          if (typeof userPreferences !== 'undefined') {
+            userPreferences.language = currentLang;
+          }
+        }
+      } catch (e) {
+        console.error('Error loading languages', e);
+      }
+    }
+
+    if (langSelectEl) {
+      langSelectEl.addEventListener('change', async () => {
+        userPreferences.language = langSelectEl.value;
+        
+        // Update currentUser in localStorage to sync with other pages without using appLanguage key
+        try {
+          const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          if (!user.preferences) user.preferences = {};
+          user.preferences.language = langSelectEl.value;
+          localStorage.setItem('currentUser', JSON.stringify(user));
+        } catch(e) {}
+
+        await savePreferences();
+        window.location.reload();
+      });
+    }
+
+    // =========================================================
+    // PREFERENCES (DASHBOARD TAB & NOTIFICATIONS)
+    // =========================================================
+    const defaultTabSelect = document.getElementById('defaultTabSelect');
+    const notifyMonthlyCheckbox = document.getElementById('notifyMonthly');
+    const notifyGoalsCheckbox = document.getElementById('notifyGoals');
+    const notifyTipsCheckbox = document.getElementById('notifyTips');
+
+    // Storage Mode Selector
+    const storageModeSelect = document.createElement('select');
+    storageModeSelect.id = 'storageModeSelect';
+    storageModeSelect.className = 'input-field';
+    storageModeSelect.innerHTML = `
+      <option value="mongodb">☁️ Cloud (MongoDB)</option>
+      <option value="local">📱 Local Device Only</option>
+    `;
+    // Insert into Security & Data card
+    document.querySelector('.right .card:last-child .card-body').prepend(storageModeSelect);
+    // Initialize value immediately from local storage (don't wait for API)
+    storageModeSelect.value = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+
+    async function initPreferences() {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/preferences`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          userPreferences = { ...userPreferences, ...data };
+          
+          // Update UI
+          defaultTabSelect.value = userPreferences.defaultDashboardTab || 'add';
+          notifyMonthlyCheckbox.checked = userPreferences.notifyMonthlySummary === true;
+          notifyGoalsCheckbox.checked = userPreferences.notifyGoals === true;
+          notifyTipsCheckbox.checked = userPreferences.notifyTips === true;
+          
+          // Sync to local storage for other pages
+          localStorage.setItem(DEFAULT_TAB_KEY, userPreferences.defaultDashboardTab);
+          localStorage.setItem(NOTIFY_MONTHLY_KEY, userPreferences.notifyMonthlySummary);
+          localStorage.setItem(NOTIFY_GOALS_KEY, userPreferences.notifyGoals);
+          localStorage.setItem(NOTIFY_TIPS_KEY, userPreferences.notifyTips);
+        }
+      } catch (e) {
+        console.error('Error loading preferences', e);
+      }
+    }
+
+    async function savePreferences() {
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_URL}/preferences`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(userPreferences)
+        });
+        
+        // Sync local
+        localStorage.setItem(DEFAULT_TAB_KEY, userPreferences.defaultDashboardTab);
+        localStorage.setItem(NOTIFY_MONTHLY_KEY, userPreferences.notifyMonthlySummary);
+        localStorage.setItem(NOTIFY_GOALS_KEY, userPreferences.notifyGoals);
+        localStorage.setItem(NOTIFY_TIPS_KEY, userPreferences.notifyTips);
+        localStorage.setItem(STORAGE_MODE_KEY, storageModeSelect.value);
+      } catch (e) {
+        console.error('Error saving preferences', e);
+      }
+    }
+
+    defaultTabSelect.addEventListener('change', () => {
+      userPreferences.defaultDashboardTab = defaultTabSelect.value;
+      savePreferences();
+      showToast('Dashboard default tab saved');
+    });
+
+    storageModeSelect.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_MODE_KEY, storageModeSelect.value);
+      showToast('Storage mode updated. Reloading...');
+      setTimeout(() => window.location.reload(), 1000);
+    });
+
+    function bindNotificationToggle(el, key, label) {
+      el.addEventListener('change', () => {
+        userPreferences[key] = el.checked;
+        savePreferences();
+        showToast(`${label} preference saved`);
+      });
+    }
+
+    bindNotificationToggle(notifyMonthlyCheckbox, 'notifyMonthlySummary', 'Monthly summary');
+    bindNotificationToggle(notifyGoalsCheckbox, 'notifyGoals', 'Goal nudges');
+    bindNotificationToggle(notifyTipsCheckbox, 'notifyTips', 'Tips');
+
+    // =========================================================
+    // SECURITY & DATA
+    // =========================================================
+    const clearDataBtn = document.getElementById('clearDataBtn');
+    const emailDataBtn = document.getElementById('emailDataBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+
+    function clearLocalData() {
+      if (!confirm('Clear all local data? This will remove expenses, categories, salary, plan and dashboard state for this browser.')) {
+        return;
+      }
+      localStorage.removeItem(EXPENSES_KEY);
+      localStorage.removeItem(CATEGORIES_KEY);
+      localStorage.removeItem(SALARY_KEY);
+      localStorage.removeItem(PLAN_KEY);
+      localStorage.removeItem(DASHBOARD_STATE_KEY);
+      localStorage.removeItem(DEFAULT_TAB_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem(USER_PROFILE_KEY);
+      localStorage.removeItem(NOTIFY_MONTHLY_KEY);
+      localStorage.removeItem(NOTIFY_GOALS_KEY);
+      localStorage.removeItem(NOTIFY_TIPS_KEY);
+
+      // Re-render parts affected
+      initSalaryAndPlan();
+      renderCategories();
+      initTheme();
+      initProfile();
+      initPreferences();
+
+      showToast('Local data cleared');
+    }
+
+    function signOut() {
+      if (!confirm('Sign out of FinFlow on this device?')) return;
+      localStorage.removeItem(CURRENT_KEY);
+      window.location.href = 'index.html';
+    }
+
+    async function emailAllData() {
+      if (!confirm("Send all your data to your registered email?")) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/user/export-email`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message);
+        } else {
+          alert('Failed: ' + (data.message || 'Unknown error'));
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error sending email');
+      }
+    }
+
+    clearDataBtn.addEventListener('click', clearLocalData);
+    emailDataBtn.addEventListener('click', emailAllData);
+    signOutBtn.addEventListener('click', signOut);
+
+    // =========================================================
+    // INIT
+    // =========================================================
+    window.addEventListener('load', () => {
+      initTheme();
+      initProfile();
+      initSalaryAndPlan();
+      initLanguage();
+      renderCategories();
+      initPreferences();
+    });
+  </script>
+  <script src="translations.js"></script>
+</body>
+</html>

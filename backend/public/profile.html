@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <title>Profile — Expense Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <!-- html2pdf for generating PDF reports -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #3f67e6;
+      --accent-soft: #e0e7ff;
+      --accent-dark: #2949c0;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --muted: #6b7280;
+      --text: #0b2340;
+      --text-soft: #9ca3af;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      --radius-lg: 18px;
+      --radius-sm: 10px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #020617;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-soft: #0b1120;
+      --accent-dark: #2563eb;
+      --danger: #f97373;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --text-soft: #6b7280;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(139,92,246,0.18), transparent 55%),
+                  var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span {
+      font-size: 28px;
+    }
+
+    .back-link {
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid rgba(148,163,184,0.25);
+      font-size: 13px;
+    }
+
+    .back-link:hover {
+      background: rgba(148,163,184,0.2);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 18px 18px 20px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(96,165,250,0.12), transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all var(--transition);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(148,163,184,0.14);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      box-shadow: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      flex-shrink: 0;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      border: 3px solid var(--border);
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .avatar-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .profile-avatar:hover .avatar-overlay {
+      opacity: 1;
+    }
+
+    #profilePicInput {
+      display: none;
+    }
+
+    .profile-info h2 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .profile-info p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(148,163,184,0.2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .setting-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .setting-desc {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .setting-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: rgba(148,163,184,0.3);
+      border-radius: 999px;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--transition);
+    }
+
+    .toggle.active {
+      background: var(--success);
+    }
+
+    .toggle-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: left var(--transition);
+    }
+
+    .toggle.active .toggle-thumb {
+      left: 22px;
+    }
+
+    .currency-search-container {
+      position: relative;
+    }
+
+    .currency-search {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .currency-search:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(63, 103, 230, 0.1);
+    }
+
+    .currency-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+    }
+
+    .currency-dropdown.show {
+      display: block;
+    }
+
+    .currency-option {
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(148,163,184,0.1);
+      transition: all var(--transition);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .currency-option:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .currency-option.selected {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .currency-code {
+      font-weight: 600;
+      color: var(--accent);
+      margin-right: 8px;
+    }
+
+    .currency-symbol {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(96,165,250,0.1), rgba(139,92,246,0.1));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 15px;
+      text-align: center;
+    }
+
+    .stat-card-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .stat-card-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .section-divider {
+      border-top: 1px solid var(--border);
+      margin: 15px 0;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(63, 103, 230, 0.1);
+    }
+
+    .danger-zone {
+      background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.04));
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .danger-title {
+      font-weight: 700;
+      color: var(--danger);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .danger-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .info-box {
+      background: linear-gradient(135deg, rgba(63,103,230,0.08), rgba(139,92,246,0.08));
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .info-box strong {
+      color: var(--accent);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .profile-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .action-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      z-index: 10000;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="back-link" href="dashboard.html" data-i18n="backToDashboard">← Back to Dashboard</a>
+      <h1 data-i18n="profileTitle"><span>👤</span> Profile</h1>
+    </div>
+  </header>
+
+  <!-- ============ PROFILE HEADER ============ -->
+  <section class="card">
+    <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar" onclick="document.getElementById('profilePicInput').click()">
+        <span id="avatarText">👤</span>
+        <img id="avatarImage" style="display: none;" />
+        <div class="avatar-overlay">📷 Upload</div>
+      </div>
+      <input type="file" id="profilePicInput" accept="image/*" onchange="uploadProfilePic(event)" />
+      <div class="profile-info">
+        <h2 id="userName">User Profile</h2>
+        <p id="userEmail">Managing your expenses efficiently</p>
+        <p id="userJoinDate" style="margin-top: 8px; font-size: 11px; color: var(--text-soft);">Joined today</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUICK STATS ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="yourStats">📊 Your Statistics</div>
+        <div class="muted" data-i18n="yourStatsDesc">Overview of your spending activity</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-value" id="totalExpenses">0</div>
+        <div class="stat-card-label" data-i18n="totalExpensesLabel">Total Expenses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-value" id="totalAmount">₹0</div>
+        <div class="stat-card-label" data-i18n="totalSpentLabel">Total Spent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-value" id="avgExpense">₹0</div>
+        <div class="stat-card-label" data-i18n="averageLabel">Average</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-value" id="totalGoals">0</div>
+        <div class="stat-card-label" data-i18n="goalsSetLabel">Goals Set</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="settingsTitle">⚙️ Settings</div>
+        <div class="muted" data-i18n="settingsDesc">Customize your experience</div>
+      </div>
+    </div>
+
+    <!-- Theme Toggle -->
+    <div class="setting-item">
+      <div class="setting-label">
+        <span class="setting-title" data-i18n="darkMode">Dark Mode</span>
+        <span class="setting-desc" data-i18n="darkModeDesc">Enable dark theme for the app</span>
+      </div>
+      <div class="setting-control">
+        <div class="toggle" id="themeToggle" onclick="toggleTheme()">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Currency Selection with Search -->
+    <div style="border-bottom: 1px solid rgba(148,163,184,0.2); padding-bottom: 15px; margin-bottom: 15px;">
+      <div class="setting-label" style="margin-bottom: 10px;">
+        <span class="setting-title" data-i18n="currency">Currency</span>
+        <span class="setting-desc" data-i18n="currencyDesc">Choose your preferred currency</span>
+      </div>
+      <div class="currency-search-container">
+        <input type="text" class="currency-search" id="currencySearch" placeholder="Search currency (e.g., USD, Euro, Rupee)..." />
+        <div class="currency-dropdown" id="currencyDropdown"></div>
+      </div>
+    </div>
+
+    <!-- Notification Preference -->
+    <div class="setting-item">
+      <div class="setting-label">
+        <span class="setting-title" data-i18n="enableNotifications">Enable Notifications</span>
+        <span class="setting-desc" data-i18n="enableNotificationsDesc">Get alerts about budget limits</span>
+      </div>
+      <div class="setting-control">
+        <div class="toggle" id="notifToggle" onclick="toggleNotifications()">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACCOUNT ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="profileTitle">👤 Profile & Identity</div>
+        <div class="muted" data-i18n="profileSubtitle">Manage your name and email</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="emailLabel">Email Address</label>
+      <input type="email" id="userEmailInput" placeholder="your@email.com" />
+    </div>
+
+    <div style="display: flex; gap: 12px;">
+      <div class="form-group" style="flex: 1;">
+        <label data-i18n="displayName">Display Name</label>
+        <input type="text" id="displayName" placeholder="Enter your name" />
+      </div>
+      <div class="form-group" style="width: 100px;">
+        <label data-i18n="avatar">Avatar</label>
+        <input type="text" id="avatarInitial" maxlength="2" placeholder="Initials" />
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 10px;" data-i18n="saveProfile">💾 Save Changes</button>
+  </section>
+
+  <!-- ============ DATA MANAGEMENT ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">💾 Data Management</div>
+        <div class="muted">Export and backup your data</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>💡 Tip:</strong> Download a backup of all your expenses, goals, and settings to keep them safe.
+    </div>
+
+    <div class="action-grid">
+      <button class="btn btn-primary" onclick="exportAllData()">📥 Export All Data</button>
+      <button class="btn btn-secondary" onclick="emailAllData()">📧 Email Data</button>
+      <button class="btn btn-secondary" onclick="exportExpenses()">📊 Expenses Only</button>
+      <button class="btn btn-secondary" onclick="exportGoals()">🎯 Goals Only</button>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div style="margin-top: 15px; position: relative; z-index: 1;">
+      <div class="muted" style="margin-bottom: 10px;">Storage Usage</div>
+      <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">Used Space</div>
+          <div style="font-size: 14px; font-weight: 700;" id="storageUsed">--</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">Available</div>
+          <div style="font-size: 14px; font-weight: 700;" id="storageAvailable">--</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRIVACY & SECURITY ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">🔒 Privacy & Security</div>
+        <div class="muted">Manage your privacy settings</div>
+      </div>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-label">
+        <span class="setting-title">Local Storage Only</span>
+        <span class="setting-desc">All data is stored locally on your device</span>
+      </div>
+      <div style="color: var(--success); font-weight: 600;">✓ Secure</div>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-label">
+        <span class="setting-title">No Cloud Sync</span>
+        <span class="setting-desc">Your data never leaves your device</span>
+      </div>
+      <div style="color: var(--success); font-weight: 600;">✓ Private</div>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-label">
+        <span class="setting-title">Clear Browser Cache</span>
+        <span class="setting-desc">Clear app data from your browser</span>
+      </div>
+      <button class="btn btn-danger" onclick="clearCache()">Clear Cache</button>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">ℹ️ About</div>
+        <div class="muted">Information and version details</div>
+      </div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-label">App Name</div>
+      <div class="stat-value">Expense Tracker</div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-label">Version</div>
+      <div class="stat-value">3.1.2</div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-label">Last Updated</div>
+      <div class="stat-value" id="lastUpdated">Today</div>
+    </div>
+
+    <div class="stat-item">
+      <div class="stat-label">Database</div>
+      <div class="stat-value">MongoDB</div>
+    </div>
+  </section>
+
+  <!-- ============ DANGER ZONE ============ -->
+  <section class="card">
+    <div class="danger-zone">
+      <div class="danger-title">⚠️ Danger Zone</div>
+      <div class="danger-desc">These actions cannot be undone. Please be careful.</div>
+      <button class="btn btn-danger" onclick="resetAllData()" style="width: 100%;">🗑️ Delete All Data</button>
+    </div>
+  </section>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<script>
+  const SETTINGS_KEY = "userSettings";
+  const EXPENSES_KEY = "userExpenses";
+  const GOALS_KEY = "userGoals";
+  const PROFILE_KEY = "userProfile";
+  const API_BASE = (window.location.port && window.location.port !== '5003')
+    ? `http://${window.location.hostname}:5003` 
+    : '';
+  const API_URL = `${API_BASE}/api`;
+
+  const CURRENCIES = [
+    { code: "INR", symbol: "₹", name: "Indian Rupee" },
+    { code: "USD", symbol: "$", name: "US Dollar" },
+    { code: "EUR", symbol: "€", name: "Euro" },
+    { code: "GBP", symbol: "£", name: "British Pound" },
+    { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+    { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+    { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+    { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
+    { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+    { code: "SEK", symbol: "kr", name: "Swedish Krona" },
+    { code: "NZD", symbol: "$", name: "New Zealand Dollar" },
+    { code: "MXN", symbol: "$", name: "Mexican Peso" },
+    { code: "SGD", symbol: "$", name: "Singapore Dollar" },
+    { code: "HKD", symbol: "$", name: "Hong Kong Dollar" },
+    { code: "NOK", symbol: "kr", name: "Norwegian Krone" },
+    { code: "KRW", symbol: "₩", name: "South Korean Won" },
+    { code: "TRY", symbol: "₺", name: "Turkish Lira" },
+    { code: "RUB", symbol: "₽", name: "Russian Ruble" },
+    { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+    { code: "ZAR", symbol: "R", name: "South African Rand" },
+    { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
+    { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
+    { code: "THB", symbol: "฿", name: "Thai Baht" },
+    { code: "PHP", symbol: "₱", name: "Philippine Peso" },
+    { code: "MYR", symbol: "RM", name: "Malaysian Ringgit" },
+    { code: "IDR", symbol: "Rp", name: "Indonesian Rupiah" },
+    { code: "VND", symbol: "₫", name: "Vietnamese Dong" },
+    { code: "TWD", symbol: "$", name: "Taiwan Dollar" },
+    { code: "PKR", symbol: "₨", name: "Pakistani Rupee" },
+    { code: "BDT", symbol: "৳", name: "Bangladeshi Taka" },
+    { code: "ARS", symbol: "$", name: "Argentine Peso" },
+    { code: "CLP", symbol: "$", name: "Chilean Peso" },
+    { code: "COP", symbol: "$", name: "Colombian Peso" },
+    { code: "DKK", symbol: "kr", name: "Danish Krone" },
+    { code: "ILS", symbol: "₪", name: "Israeli Shekel" },
+    { code: "QAR", symbol: "ر.ق", name: "Qatari Riyal" },
+    { code: "HUF", symbol: "Ft", name: "Hungarian Forint" },
+    { code: "CZK", symbol: "Kč", name: "Czech Koruna" },
+    { code: "PLN", symbol: "zł", name: "Polish Zloty" },
+    { code: "RON", symbol: "lei", name: "Romanian Leu" },
+    { code: "BGN", symbol: "лв", name: "Bulgarian Lev" },
+    { code: "HRK", symbol: "kn", name: "Croatian Kuna" },
+    { code: "ISK", symbol: "kr", name: "Icelandic Króna" },
+    { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
+    { code: "KES", symbol: "KSh", name: "Kenyan Shilling" },
+    { code: "GHS", symbol: "₵", name: "Ghanaian Cedi" },
+    { code: "EGP", symbol: "£", name: "Egyptian Pound" },
+    { code: "MAD", symbol: "د.م.", name: "Moroccan Dirham" },
+    { code: "UGX", symbol: "USh", name: "Ugandan Shilling" },
+    { code: "TZS", symbol: "TSh", name: "Tanzanian Shilling" }
+  ];
+
+  function showToast(message, type = 'success') {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast';
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = `toast show ${type}`;
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3000);
+  }
+
+  async function getPreferences() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) return await res.json();
+      return {};
+    } catch { return {}; }
+  }
+
+  async function savePreferences(prefs) {
+    const token = localStorage.getItem('token');
+    await fetch(`${API_URL}/preferences`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(prefs)
+    });
+  }
+
+  function getProfile() {
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  async function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    const themeToggle = document.getElementById("themeToggle");
+    if (theme === "dark") {
+      themeToggle.classList.add("active");
+    } else {
+      themeToggle.classList.remove("active");
+    }
+  }
+
+  async function applySettings() {
+    const settings = await getPreferences();
+    const theme = localStorage.getItem("appTheme") || "light";
+    applyTheme(theme);
+
+    const notifEnabled = settings.notifications !== false;
+    const notifToggle = document.getElementById("notifToggle");
+    if (notifEnabled) notifToggle.classList.add("active");
+    else notifToggle.classList.remove("active");
+  }
+
+  async function initCurrencyDropdown() {
+    const settings = await getPreferences();
+    const currentCurrency = settings.currency || "INR";
+    const dropdown = document.getElementById("currencyDropdown");
+    const search = document.getElementById("currencySearch");
+
+    function renderOptions(filter = "") {
+      const filtered = CURRENCIES.filter(c => 
+        c.code.toLowerCase().includes(filter.toLowerCase()) ||
+        c.name.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      dropdown.innerHTML = filtered.map(c => `
+        <div class="currency-option ${c.code === currentCurrency ? 'selected' : ''}" onclick="selectCurrency('${c.code}')">
+          <span><span class="currency-code">${c.code}</span> ${c.name}</span>
+          <span class="currency-symbol">${c.symbol}</span>
+        </div>
+      `).join("");
+    }
+
+    search.addEventListener("focus", () => {
+      dropdown.classList.add("show");
+      renderOptions(search.value);
+    });
+
+    search.addEventListener("input", (e) => {
+      dropdown.classList.add("show");
+      renderOptions(e.target.value);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".currency-search-container")) {
+        dropdown.classList.remove("show");
+      }
+    });
+
+    renderOptions();
+  }
+
+  async function selectCurrency(code) {
+    const settings = await getPreferences();
+    settings.currency = code;
+    await savePreferences(settings);
+    document.getElementById("currencySearch").value = CURRENCIES.find(c => c.code === code)?.name || "";
+    document.getElementById("currencyDropdown").classList.remove("show");
+    initCurrencyDropdown();
+    updateStats();
+  }
+
+  function uploadProfilePic(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result;
+      
+      // Optimistic update
+      const img = document.getElementById('avatarImage');
+      const text = document.getElementById('avatarText');
+      if (img && text) {
+        img.src = base64;
+        img.style.display = 'block';
+        text.style.display = 'none';
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_URL}/auth/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ profilePic: base64 })
+        });
+        
+        // Update local storage currentUser to keep other pages in sync
+        try {
+          const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+          currentUser.profilePic = base64;
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        } catch(e){}
+
+        loadProfile();
+      } catch (e) {
+        console.error("Failed to upload profile picture", e);
+        showToast("Failed to upload profile picture", "error");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function toggleTheme() {
+    const currentTheme = localStorage.getItem("appTheme") || "light";
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    localStorage.setItem("appTheme", newTheme);
+    applyTheme(newTheme);
+  }
+
+  async function toggleNotifications() {
+    const settings = await getPreferences();
+    settings.notifications = settings.notifications !== false ? false : true;
+    await savePreferences(settings);
+    applySettings();
+  }
+
+  async function saveProfile() {
+    const name = document.getElementById("displayName").value;
+    const email = document.getElementById("userEmailInput").value;
+    let avatarInitial = document.getElementById("avatarInitial").value.trim();
+    
+    if (!avatarInitial && name) {
+      avatarInitial = name.charAt(0).toUpperCase();
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name, email, avatarInitial })
+      });
+      showToast("✓ Profile saved successfully!");
+    } catch (e) {
+      showToast("Failed to save profile", "error");
+    }
+  }
+
+  async function loadProfile() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const user = data.user;
+        
+        document.getElementById("displayName").value = user.name || "User";
+        document.getElementById("userEmailInput").value = user.email || "";
+        document.getElementById("userName").innerText = user.name || "User Profile";
+        document.getElementById("userEmail").innerText = user.email || "Managing your expenses efficiently";
+        
+        const initial = user.avatarInitial || (user.name ? user.name.charAt(0).toUpperCase() : 'U');
+        document.getElementById("avatarInitial").value = user.avatarInitial || "";
+        
+        const avatarImg = document.getElementById("avatarImage");
+        const avatarText = document.getElementById("avatarText");
+        
+        if (user.profilePic) {
+          avatarImg.src = user.profilePic;
+          avatarImg.style.display = 'block';
+          avatarText.style.display = 'none';
+        } else {
+          avatarImg.style.display = 'none';
+          avatarText.style.display = 'block';
+          avatarText.innerText = initial;
+        }
+        
+        const headerAvatar = document.getElementById("userAvatar");
+        if (headerAvatar) {
+          if (user.profilePic) {
+            headerAvatar.innerText = '';
+            headerAvatar.style.backgroundImage = `url(${user.profilePic})`;
+            headerAvatar.style.backgroundSize = 'cover';
+            headerAvatar.style.backgroundPosition = 'center';
+          } else {
+            headerAvatar.innerText = initial;
+            headerAvatar.style.backgroundImage = '';
+          }
+        }
+        
+        const joinDate = new Date(user.createdAt || Date.now());
+        document.getElementById("userJoinDate").innerText = `Joined ${joinDate.toLocaleDateString('en-IN')}`;
+      }
+    } catch (e) {
+      console.error("Error loading profile", e);
+    }
+  }
+
+  async function updateStats() {
+    const token = localStorage.getItem('token');
+    let expenses = [];
+    let goals = [];
+    let settings = {};
+
+    try {
+      const [expRes, goalRes, prefRes] = await Promise.all([
+        fetch(`${API_URL}/expenses`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/goals`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      if (expRes.ok) expenses = await expRes.json();
+      if (goalRes.ok) goals = await goalRes.json();
+      if (prefRes.ok) settings = await prefRes.json();
+    } catch (e) { console.error(e); }
+
+    const currencyCode = settings.currency || "INR";
+    const currency = CURRENCIES.find(c => c.code === currencyCode);
+    const symbol = currency?.symbol || "₹";
+
+    const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const avg = expenses.length > 0 ? Math.round(total / expenses.length) : 0;
+
+    document.getElementById("totalExpenses").innerText = expenses.length;
+    document.getElementById("totalAmount").innerText = symbol + total.toLocaleString("en-IN");
+    document.getElementById("avgExpense").innerText = symbol + avg.toLocaleString("en-IN");
+    document.getElementById("totalGoals").innerText = goals.length;
+
+    updateStorageInfo();
+  }
+
+  function updateStorageInfo() {
+    const used = JSON.stringify(localStorage).length;
+    const usedKB = (used / 1024).toFixed(2);
+    document.getElementById("storageUsed").innerText = usedKB + " KB";
+
+    if (navigator.storage && navigator.storage.estimate) {
+      navigator.storage.estimate().then(estimate => {
+        const availableKB = ((estimate.quota - estimate.usage) / 1024).toFixed(2);
+        document.getElementById("storageAvailable").innerText = availableKB + " KB";
+      });
+    } else {
+      document.getElementById("storageAvailable").innerText = "Unknown";
+    }
+  }
+
+  async function exportAllData() {
+    try {
+      const token = localStorage.getItem('token');
+      // Use the new direct download endpoint which includes moments and all data
+      const response = await fetch(`${API_URL}/user/export-data`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `expense-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        const err = await response.json();
+        showToast('Failed to export data: ' + (err.message || 'Server error'), 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to export data', 'error');
+    }
+  }
+
+  async function emailAllData() {
+    const btn = document.querySelector('button[onclick="emailAllData()"]');
+    const originalText = btn.innerText;
+    btn.innerText = "⏳ Generating PDF...";
+    btn.disabled = true;
+    showToast("Generating PDF and sending email...", "success");
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      // 1. Fetch Data
+      const [expensesData, goalsData] = await Promise.all([
+        fetch(`${API_URL}/expenses`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_URL}/goals`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+      ]);
+
+      const expenses = expensesData || [];
+      const goals = goalsData || [];
+      const totalSpent = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const symbol = expenses.length > 0 && expenses[0].currency ? (expenses[0].currency === 'INR' ? '₹' : expenses[0].currency) : '₹';
+
+      // 2. Generate Chart Image
+      let chartImg = null;
+      if (typeof Chart !== 'undefined' && expenses.length > 0) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 300;
+        canvas.style.display = 'none';
+        document.body.appendChild(canvas);
+        
+        const ctx = canvas.getContext('2d');
+        const catData = {};
+        expenses.forEach(e => { catData[e.category] = (catData[e.category] || 0) + e.amount; });
+        const sortedCats = Object.keys(catData).sort((a,b) => catData[b] - catData[a]);
+        
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: sortedCats.slice(0, 8),
+            datasets: [{
+              label: 'Spending',
+              data: sortedCats.slice(0, 8).map(c => catData[c]),
+              backgroundColor: ["#3f67e6", "#60a5fa", "#22c55e", "#f97373", "#facc15", "#ec4899", "#8b5cf6", "#94a3b8"],
+            }]
+          },
+          options: { animation: false, responsive: false, plugins: { legend: { display: false } } }
+        });
+        
+        chartImg = canvas.toDataURL('image/png');
+        document.body.removeChild(canvas);
+      }
+
+      // 2. Build HTML Report
+      const reportDiv = document.createElement('div');
+      reportDiv.style.width = '800px';
+      reportDiv.innerHTML = `
+        <style>
+          .pdf-container { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; line-height: 1.5; padding: 40px; background: #fff; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #3f67e6; padding-bottom: 20px; margin-bottom: 30px; }
+          .logo { font-size: 28px; font-weight: 800; color: #3f67e6; letter-spacing: -1px; }
+          .meta { text-align: right; font-size: 12px; color: #666; }
+          .summary-grid { display: flex; gap: 20px; margin-bottom: 30px; }
+          .summary-box { flex: 1; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+          .summary-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+          .summary-value { font-size: 24px; font-weight: 800; color: #1e293b; margin-top: 8px; }
+          .section-title { font-size: 18px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin: 40px 0 20px; display: flex; align-items: center; gap: 10px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th { text-align: left; padding: 12px; background: #f1f5f9; color: #475569; font-weight: 700; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px; }
+          td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: top; }
+          tr:nth-child(even) { background-color: #fcfcfc; }
+          .amount { text-align: right; font-family: 'Courier New', monospace; font-weight: 700; color: #0f172a; }
+          .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; background: #e0e7ff; color: #4338ca; }
+          .footer { margin-top: 60px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        ` + '<' + '/style>' + `
+        <div class="pdf-container">
+          <div class="header">
+            <div class="logo">FinFlow</div>
+            <div class="meta">
+              <div><strong>Statement Date:</strong> ${new Date().toLocaleDateString()}</div>
+              <div><strong>User:</strong> ${document.getElementById('displayName')?.value || 'User'}</div>
+              <div><strong>Email:</strong> ${document.getElementById('userEmailInput')?.value || ''}</div>
+            </div>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-box">
+              <div class="summary-label">Total Spent</div>
+              <div class="summary-value" style="color: #ef4444;">${symbol}${totalSpent.toLocaleString()}</div>
+            </div>
+            <div class="summary-box">
+              <div class="summary-label">Total Transactions</div>
+              <div class="summary-value">${expenses.length}</div>
+            </div>
+            <div class="summary-box">
+              <div class="summary-label">Active Goals</div>
+              <div class="summary-value" style="color: #3b82f6;">${goals.length}</div>
+            </div>
+          </div>
+
+          ${chartImg ? `
+          <div style="margin: 20px 0; page-break-inside: avoid; text-align: center;">
+            <div class="section-title">📊 Spending Analysis</div>
+            <div style="text-align: center; margin-top: 10px;">
+              <img src="${chartImg}" style="width: 100%; max-width: 500px; border: 1px solid #eee; border-radius: 8px;" />
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="section-title">📝 Transaction History</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 20%;">Category</th>
+                <th style="width: 45%;">Description</th>
+                <th style="width: 20%; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${expenses.slice(0, 100).map((e, i) => `
+                <tr>
+                  <td>${new Date(e.date).toLocaleDateString()}</td>
+                  <td><span class="badge">${e.category}</span></td>
+                  <td>${e.note || '-'}</td>
+                  <td class="amount">${symbol}${e.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Generated by FinFlow Expense Tracker • This is a computer-generated document.
+          </div>
+        </div>
+      `;
+
+      // 3. Generate PDF Base64
+      const opt = {
+        margin: 0,
+        filename: 'finflow-statement.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1, useCORS: true }, // Reduced scale for mobile
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      const pdfBase64 = await html2pdf().set(opt).from(reportDiv).output('datauristring');
+
+      // 4. Send to Backend
+      const res = await fetch(`${API_URL}/user/export-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ pdfData: pdfBase64 })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message, "success");
+      } else {
+        showToast('Failed: ' + (data.message || 'Unknown error'), "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Error sending email', "error");
+    } finally {
+      btn.innerText = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  async function exportExpenses() {
+    try {
+      const token = localStorage.getItem('token');
+      const expenses = await fetch(`${API_URL}/expenses`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+      
+      let csv = "Date,Category,Amount,Note,Currency\n";
+      expenses.forEach(e => {
+        const date = new Date(e.date).toLocaleDateString("en-IN");
+        csv += `${date},${e.category},${e.amount},"${e.note}",${e.currency}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `expenses-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } catch (e) {
+      showToast('Failed to export expenses', 'error');
+    }
+  }
+
+  async function exportGoals() {
+    try {
+      const token = localStorage.getItem('token');
+      const goals = await fetch(`${API_URL}/goals`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+      
+      const json = JSON.stringify(goals, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `goals-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+    } catch (e) {
+      showToast('Failed to export goals', 'error');
+    }
+  }
+
+  function clearCache() {
+    if (confirm("Clear app cache? This will not delete your data.")) {
+      localStorage.clear();
+      showToast("✓ Cache cleared! Refreshing...");
+      location.reload();
+    }
+  }
+
+  function resetAllData() {
+    if (confirm("⚠️ This will DELETE ALL your data! Are you sure?")) {
+      if (confirm("This action CANNOT be undone. Really delete everything?")) {
+        localStorage.clear();
+        showToast("✓ All data deleted. Refreshing...");
+        location.reload();
+      }
+    }
+  }
+
+  window.saveProfile = saveProfile;
+  window.toggleTheme = toggleTheme;
+  window.toggleNotifications = toggleNotifications;
+  window.selectCurrency = selectCurrency;
+  window.uploadProfilePic = uploadProfilePic;
+  window.exportAllData = exportAllData;
+  window.emailAllData = emailAllData;
+  window.exportExpenses = exportExpenses;
+  window.exportGoals = exportGoals;
+  window.clearCache = clearCache;
+  window.resetAllData = resetAllData;
+
+  applySettings();
+  initCurrencyDropdown();
+  loadProfile();
+  updateStats();
+</script>
+<script src="translations.js"></script>
+</body>
+</html>

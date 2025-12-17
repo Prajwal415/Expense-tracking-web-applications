@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Help & Support — FinFlow</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: radial-gradient(circle at 0 0, #1d4ed8 0, transparent 50%),
+                 radial-gradient(circle at 100% 100%, #7c3aed 0, transparent 55%),
+                 #0f172a;
+      --card-bg: rgba(15, 23, 42, 0.88);
+      --card-border: rgba(148, 163, 184, 0.35);
+      --accent: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.12);
+      --accent-strong: #4f46e5;
+      --accent-gradient: linear-gradient(135deg,#6366f1,#a855f7);
+      --danger: #f97373;
+      --success: #10b981;
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --text-soft: #cbd5f5;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --shadow-strong: 0 24px 60px rgba(15,23,42,0.8);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f3f4f6;
+      --bg-soft: radial-gradient(circle at 0 0, #e0e7ff 0, transparent 50%),
+                 radial-gradient(circle at 100% 100%, #fee2ff 0, transparent 55%),
+                 #f3f4f6;
+      --card-bg: #ffffff;
+      --card-border: #e5e7eb;
+      --accent-soft: rgba(79, 70, 229, 0.1);
+      --text: #111827;
+      --text-soft: #374151;
+      --muted: #6b7280;
+      --shadow-strong: 0 18px 40px rgba(15,23,42,0.18);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-soft);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 16px 32px;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(to bottom, rgba(15,23,42,0.95), rgba(15,23,42,0.75));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    :root[data-theme="light"] .header {
+      background: linear-gradient(to bottom, rgba(243,244,246,0.95), rgba(243,244,246,0.85));
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 10px 30px rgba(79,70,229,0.5);
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 12px;
+      border-right: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 0 0,#38bdf8,#818cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #0b1120;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(56,189,248,0.4);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .user-avatar:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 14px 36px rgba(56,189,248,0.55);
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .user-status {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .menu-button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .menu-button:hover {
+      background: rgba(148, 163, 184, 0.18);
+      transform: translateY(-1px);
+    }
+    .menu-dots {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .menu-dots span {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--text);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      right: 0;
+      top: 110%;
+      min-width: 230px;
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-strong);
+      padding: 6px 0;
+      display: none;
+    }
+    .dropdown-menu.active {
+      display: block;
+    }
+
+    .menu-item {
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-soft);
+      transition: background var(--transition), color var(--transition), padding-left var(--transition);
+    }
+    .menu-item span.icon {
+      width: 18px;
+      text-align: center;
+    }
+    .menu-item:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding-left: 18px;
+    }
+    .menu-item.danger:hover {
+      color: var(--danger);
+      background: rgba(248,113,113,0.1);
+    }
+    .menu-divider {
+      height: 1px;
+      margin: 6px 0;
+      background: rgba(148, 163, 184, 0.35);
+    }
+
+    .page-header {
+      margin-top: 20px;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-strong);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      opacity: 0.09;
+      background: radial-gradient(circle at 0 0,#38bdf8,#8b5cf6,transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* FAQ Section */
+    .faq-section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .faq-item {
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 13px;
+      transition: background var(--transition);
+      user-select: none;
+    }
+    .faq-question:hover {
+      background: var(--accent-soft);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition);
+      padding: 0 14px;
+    }
+    .faq-answer.open {
+      max-height: 400px;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(99,102,241,0.2);
+      background: rgba(99,102,241,0.05);
+      font-size: 12px;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    .arrow {
+      transition: transform var(--transition);
+      font-size: 12px;
+    }
+    .faq-answer.open ~ .faq-question .arrow {
+      transform: rotate(180deg);
+    }
+
+    /* Team Section */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .team-member {
+      background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1));
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+      transition: all var(--transition);
+    }
+    .team-member:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+    }
+
+    .team-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 6px 15px rgba(99,102,241,0.4);
+      border: 2px solid var(--card-border);
+    }
+
+    .team-name {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .team-role {
+      font-size: 10px;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .team-contact {
+      font-size: 10px;
+      color: var(--muted);
+      word-break: break-all;
+      padding: 4px;
+      background: rgba(15,23,42,0.5);
+      border-radius: 4px;
+      margin-bottom: 4px;
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    :root[data-theme="light"] .team-contact {
+      background: rgba(243,244,246,0.8);
+    }
+
+    .contact-label {
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+
+    /* Community Section */
+    .community-box {
+      background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(56,189,248,0.1));
+      border: 2px solid rgba(16,185,129,0.4);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .community-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--success);
+    }
+
+    .community-description {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-bottom: 12px;
+    }
+
+    .community-links {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 10px 25px rgba(79,70,229,0.5);
+      transition: all var(--transition);
+      text-decoration: none;
+    }
+    .btn:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 14px 30px rgba(79,70,229,0.6);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, rgba(56,189,248,0.8), rgba(16,185,129,0.8));
+    }
+
+    .btn-instagram {
+      background: linear-gradient(135deg, rgba(217,70,239,0.8), rgba(255,92,31,0.8));
+    }
+
+    @media (max-width: 900px) {
+      .team-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        padding-inline: 12px;
+      }
+      .logo-text {
+        display: none;
+      }
+      .profile-section {
+        border-right: none;
+        padding-right: 0;
+      }
+      .page-title {
+        font-size: 24px;
+      }
+      .team-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .container {
+        padding: 16px 12px 24px;
+      }
+      .card {
+        padding: 16px;
+      }
+      .community-links {
+        flex-direction: column;
+      }
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-section">
+      <div class="logo-icon">💰</div>
+      <div class="logo-text">FinFlow</div>
+    </div>
+
+    <div class="header-right">
+      <div class="profile-section">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">User</div>
+          <div class="user-status">Help & Support</div>
+        </div>
+      </div>
+
+      <div style="position: relative;">
+        <button class="menu-button" id="menuBtn" aria-haspopup="true" aria-expanded="false">
+          <div class="menu-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </button>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <div class="menu-item" onclick="openMenuPage('dashboard.html')">
+            <span class="icon">🏠</span><span data-i18n="dashboardMenu">Dashboard</span>
+          </div>
+          <div class="menu-item" onclick="openMenuPage('add-expense.html')">
+            <span class="icon">➕</span><span data-i18n="addExpense">Add Expense</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item" onclick="openMenuPage('settings.html')">
+            <span class="icon">⚙️</span><span data-i18n="settingsTitle">Settings</span>
+          </div>
+          <div class="menu-item" onclick="openMenuPage('profile.html')">
+            <span class="icon">👤</span><span data-i18n="profileTitle">Profile</span>
+          </div>
+          <div class="menu-item" onclick="openMenuPage('reports.html')">
+            <span class="icon">📊</span><span data-i18n="reportsTitle">Reports</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item" onclick="toggleStorageMode()">
+            <span class="icon" id="storageModeIcon">☁️</span><span id="storageModeText" data-i18n="storageMode">Storage: Cloud</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item" onclick="openMenuPage('help-support.html')">
+            <span class="icon">❓</span><span data-i18n="helpTitle">Help & Support</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item danger" onclick="logout()">
+            <span class="icon">🚪</span><span data-i18n="signOut">Logout</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div class="page-header">
+      <div class="page-title"><span>❓</span> <span data-i18n="helpTitle">Help & Support</span></div>
+      <div class="page-subtitle">Get help from our team or connect with the community</div>
+    </div>
+
+    <!-- FAQ Section at Top -->
+    <div class="card">
+      <div class="card-title" data-i18n="faqTitle">📖 Frequently Asked Questions</div>
+
+      <div class="faq-section">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>How do I get started with FinFlow?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            Start by creating an account and adding your first expense. Go to the Dashboard to see your spending overview, then navigate to Reports for detailed insights. Check Settings to customize your theme and currency preferences.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>Where is my data stored?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            All your expense data is stored locally on your device using browser storage (localStorage). This means your data is private and not sent to any server. For safety, regularly export your data as backup.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>How do I export my expenses?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            Visit the Reports page and use the export buttons: CSV (for Excel), JSON (for backup), HTML (for web), or Print/PDF. Choose the format that works best for your needs.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>Can I change the currency symbol?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            Yes! Go to Settings and update your currency symbol. All amounts across the app will automatically update to use your chosen currency.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>How do I backup my data?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            Export your expenses as JSON from the Reports page. This creates a complete backup file. Store it safely, and you can import it later if needed.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>What happens if I clear my browser cache?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            Clearing your browser cache will delete all stored data. To prevent data loss, export your expenses regularly to a safe location.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>Is there a mobile app?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            FinFlow is a web app that works on all devices through your browser. You can bookmark it on your phone or desktop for quick access. No separate app installation needed.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFAQ(event)">
+            <span>How do I contact support?</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="faq-answer">
+            You can reach our team through the WhatsApp community or Instagram. Connect with us directly for quick support and updates!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Community Section -->
+    <div class="card">
+      <div class="card-title" style="color: var(--success);" data-i18n="communityTitle">🌐 Community & Social</div>
+      <div class="community-box">
+        <div class="community-title">Join Our Community</div>
+        <div class="community-description">
+          Connect with fellow users, share tips, and get real-time support from our team and community members.
+        </div>
+        <div class="community-links">
+          <a href="https://chat.whatsapp.com/HiWtsQqxnLFLDp09ABtv7H" target="_blank" class="btn btn-secondary">
+            💬 WhatsApp Community
+          </a>
+          <button class="btn btn-instagram" onclick="showComingSoon('Instagram')">
+            📸 Instagram
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Members Section -->
+    <div class="card">
+      <div class="card-title" data-i18n="teamTitle">👥 Our Team</div>
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="team-avatar">👨‍💼</div>
+          <div class="team-name">Prajwal</div>
+          <div class="team-role">Team lead</div>
+          <div class="contact-label">Contact</div>
+          <div class="team-contact">8296653721</div>
+          <div class="contact-label">mail</div>
+          <div class="team-contact">biradarprajwal999@gmail.com</div>
+        </div>
+
+        <div class="team-member">
+          <div class="team-avatar">👨‍💼</div>
+          <div class="team-name">Sachin</div>
+          <div class="team-role">UI&UX</div>
+          <div class="contact-label">Contact</div>
+          <div class="team-contact">6362647566</div>
+          <div class="contact-label">MAIL</div>
+          <div class="team-contact">SACHIN136@gmail.com</div>
+        </div>
+
+        <div class="team-member">
+          <div class="team-avatar">👨‍💼</div>
+          <div class="team-name">Sudeep</div>
+          <div class="team-role">Backend developer</div>
+          <div class="contact-label">Contact</div>
+          <div class="team-contact">9481614547</div>
+          <div class="contact-label">Role</div>
+          <div class="team-contact">Sudeep26@gmail.com</div>
+        </div>
+
+        <div class="team-member">
+          <div class="team-avatar">👨‍💼</div>
+          <div class="team-name">Sumit</div>
+          <div class="team-role">QA Tester&Documentation Lead</div>
+          <div class="contact-label">Contact</div>
+          <div class="team-contact">6362371794</div>
+          <div class="contact-label">mail</div>
+          <div class="team-contact">Sumit652@gmail.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const CURRENT_KEY = 'currentUser';
+  if (!localStorage.getItem(CURRENT_KEY)) {
+    window.location.href = 'index.html';
+  }
+
+  // ===== APPLY THEME =====
+  function applyTheme() {
+    const theme = localStorage.getItem('appTheme') || 
+                  localStorage.getItem('theme') || 
+                  localStorage.getItem('userTheme') || 
+                  'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  applyTheme();
+
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'appTheme' || e.key === 'theme' || e.key === 'userTheme') {
+      applyTheme();
+    }
+  });
+
+  // ===== USER HEADER =====
+  (function hydrateUserHeader() {
+    try {
+      const userRaw = localStorage.getItem(CURRENT_KEY);
+      if (!userRaw) return;
+      let userName = 'User';
+      try {
+        const parsed = JSON.parse(userRaw);
+        if (parsed && parsed.name) userName = parsed.name;
+        if (parsed && parsed.profilePic) {
+          const av = document.getElementById('userAvatar');
+          av.innerText = '';
+          av.style.backgroundImage = `url(${parsed.profilePic})`;
+          av.style.backgroundSize = 'cover';
+          av.style.backgroundPosition = 'center';
+        }
+      } catch (_) {
+        userName = String(userRaw);
+      }
+      document.getElementById('userName').innerText = userName;
+      document.getElementById('userAvatar').innerText = userName.charAt(0).toUpperCase();
+    } catch (e) {
+      console.error('Error hydrating user header', e);
+    }
+  })();
+
+  // ===== MENU HANDLING =====
+  const menuBtn = document.getElementById('menuBtn');
+  const dropdownMenu = document.getElementById('dropdownMenu');
+
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdownMenu.classList.toggle('active');
+    menuBtn.setAttribute('aria-expanded', dropdownMenu.classList.contains('active'));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.menu-button') && !e.target.closest('.dropdown-menu')) {
+      dropdownMenu.classList.remove('active');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // ===== STORAGE MODE TOGGLE =====
+  function initStorageToggle() {
+    const mode = localStorage.getItem('storageMode') || 'mongodb';
+    const icon = document.getElementById('storageModeIcon');
+    const text = document.getElementById('storageModeText');
+    if (icon && text) {
+      icon.innerText = mode === 'local' ? '📱' : '☁️';
+      text.innerText = mode === 'local' ? 'Storage: Local' : 'Storage: Cloud';
+    }
+  }
+
+  function toggleStorageMode() {
+    const current = localStorage.getItem('storageMode') || 'mongodb';
+    const next = current === 'mongodb' ? 'local' : 'mongodb';
+    localStorage.setItem('storageMode', next);
+    alert(`Switched to ${next === 'mongodb' ? 'Cloud (MongoDB)' : 'Local Device'} storage.`);
+    window.location.reload();
+  }
+  initStorageToggle();
+
+  function saveDashboardState(nextPage) {
+    const salary = localStorage.getItem('salary') || '';
+    const planData = localStorage.getItem('planData') || '';
+    localStorage.setItem('dashboardState', JSON.stringify({
+      salary,
+      planData,
+      lastVisited: new Date().toISOString(),
+      nextPage
+    }));
+  }
+
+  function openMenuPage(page) {
+    dropdownMenu.classList.remove('active');
+    saveDashboardState(page);
+    window.location.href = page;
+  }
+
+  function logout() {
+    localStorage.removeItem(CURRENT_KEY);
+    localStorage.removeItem('dashboardState');
+    window.location.href = 'index.html';
+  }
+
+  // ===== FAQ TOGGLE =====
+  function toggleFAQ(event) {
+    const faqItem = event.currentTarget.parentElement;
+    const answer = faqItem.querySelector('.faq-answer');
+    
+    // Close all other FAQs
+    document.querySelectorAll('.faq-answer').forEach(a => {
+      if (a !== answer) {
+        a.classList.remove('open');
+      }
+    });
+    
+    answer.classList.toggle('open');
+  }
+
+  // ===== COMING SOON =====
+  function showComingSoon(platform) {
+    alert(`📸 ${platform} coming soon!\n\nFollow our WhatsApp community for updates.`);
+  }
+</script>
+<script src="translations.js"></script>
+</body>
+</html>

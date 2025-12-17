@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <title>Preferences — Expense Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #3f67e6;
+      --accent-soft: #e0e7ff;
+      --accent-dark: #2949c0;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --muted: #6b7280;
+      --text: #0b2340;
+      --text-soft: #9ca3af;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      --radius-lg: 18px;
+      --radius-sm: 10px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #020617;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-soft: #0b1120;
+      --accent-dark: #2563eb;
+      --danger: #f97373;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --text-soft: #6b7280;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(139,92,246,0.18), transparent 55%),
+                  var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span {
+      font-size: 28px;
+    }
+
+    .back-link {
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid rgba(148,163,184,0.25);
+      font-size: 13px;
+    }
+
+    .back-link:hover {
+      background: rgba(148,163,184,0.2);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 18px 18px 20px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(96,165,250,0.12), transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all var(--transition);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(148,163,184,0.14);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .pref-section {
+      margin-bottom: 18px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(148,163,184,0.2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .pref-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .pref-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .pref-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .pref-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+    }
+
+    .pref-label {
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .pref-label-title {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .pref-label-desc {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: rgba(148,163,184,0.3);
+      border-radius: 999px;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--transition);
+    }
+
+    .toggle.active {
+      background: var(--success);
+    }
+
+    .toggle-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: left var(--transition);
+    }
+
+    .toggle.active .toggle-thumb {
+      left: 22px;
+    }
+
+    .input-field {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      width: 100%;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(63, 103, 230, 0.1);
+    }
+
+    .range-input {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.2);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .range-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(63, 103, 230, 0.3);
+    }
+
+    .range-input::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 8px rgba(63, 103, 230, 0.3);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .button-group button {
+      flex: 1;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: rgba(96,165,250,0.05);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 1px solid rgba(148,163,184,0.15);
+    }
+
+    .checkbox-item:hover {
+      background: rgba(96,165,250,0.1);
+    }
+
+    .checkbox-item input {
+      cursor: pointer;
+    }
+
+    .checkbox-label {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      .pref-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="back-link" href="dashboard.html" data-i18n="backToDashboard">← Back to Dashboard</a>
+      <h1 data-i18n="preferencesTitle"><span>⚙️</span> Preferences</h1>
+    </div>
+  </header>
+
+  <!-- ============ DEFAULT CATEGORY ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="defaultCategoryTitle">📌 Default Category</div>
+        <div class="muted">Pre-select category when adding expenses</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefSelectDefaultCat">Select Default Category</div>
+      <div class="pref-desc" data-i18n="prefSelectDefaultCatDesc">This category will be pre-selected when you add a new expense</div>
+      <select class="input-field" id="defaultCategory" onchange="savePreferences()">
+        <option value="">None</option>
+        <option value="Food">🍔 Food</option>
+        <option value="Shopping">🛍️ Shopping</option>
+        <option value="Travel">✈️ Travel</option>
+        <option value="Medical">🏥 Medical</option>
+        <option value="Education">📚 Education</option>
+        <option value="Entertainment">🎬 Entertainment</option>
+        <option value="Other">📌 Other</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ============ QUICK ENTRY SETTINGS ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="quickEntryTitle">⚡ Quick Entry Settings</div>
+        <div class="muted">Customize quick expense entry</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefQuickEntryShortcut">Quick Entry Shortcut</div>
+      <div class="pref-item">
+        <div class="pref-label">
+          <span class="pref-label-title" data-i18n="prefEnableQuickAdd">Enable Quick Add</span>
+          <span class="pref-label-desc" data-i18n="prefEnableQuickAddDesc">Floating button for fast expense entry</span>
+        </div>
+        <div class="toggle" id="quickAddToggle" onclick="togglePreference('quickAdd')">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefSkipDescTitle">Skip Description on Quick Add</div>
+      <div class="pref-item">
+        <div class="pref-label">
+          <span class="pref-label-title" data-i18n="prefMakeNotesOptional">Make Notes Optional</span>
+          <span class="pref-label-desc" data-i18n="prefMakeNotesOptionalDesc">Don't require description for quick entries</span>
+        </div>
+        <div class="toggle" id="skipDescToggle" onclick="togglePreference('skipDesc')">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DATE PREFERENCES ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="datePrefTitle">📅 Date Preferences</div>
+        <div class="muted">Set your date format and week start</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefDateFormat">Date Format</div>
+      <div class="pref-desc" data-i18n="prefDateFormatDesc">How dates are displayed throughout the app</div>
+      <select class="input-field" id="dateFormat" onchange="savePreferences()">
+        <option value="DD/MM/YYYY">DD/MM/YYYY (10/12/2025)</option>
+        <option value="MM/DD/YYYY">MM/DD/YYYY (12/10/2025)</option>
+        <option value="YYYY-MM-DD">YYYY-MM-DD (2025-12-10)</option>
+        <option value="DD-MMM-YY">DD-MMM-YY (10-Dec-25)</option>
+      </select>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefWeekStarts">Week Starts On</div>
+      <div class="pref-desc" data-i18n="prefWeekStartsDesc">First day of week for calendar views</div>
+      <select class="input-field" id="weekStart" onchange="savePreferences()">
+        <option value="Monday">Monday</option>
+        <option value="Sunday">Sunday</option>
+        <option value="Saturday">Saturday</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ============ DECIMAL PLACES ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="prefNumberFormat">🔢 Number Formatting</div>
+        <div class="muted" data-i18n="prefNumberFormatDesc">Control decimal places and separators</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefDecimalPlaces">Decimal Places</div>
+      <div class="pref-desc" data-i18n="prefDecimalPlacesDesc">How many decimal places to show in amounts</div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="number" class="input-field" id="decimalPlaces" min="0" max="4" value="2" onchange="savePreferences()" style="max-width: 100px;" />
+        <span class="pref-label-desc">places</span>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefThousandSeparator">Thousand Separator</div>
+      <div class="pref-item">
+        <div class="pref-label">
+          <span class="pref-label-title" data-i18n="prefThousandSeparatorTitle">Use Comma Separator</span>
+          <span class="pref-label-desc" data-i18n="prefThousandSeparatorDesc">Show 10,000 instead of 10000</span>
+        </div>
+        <div class="toggle" id="thousandToggle" onclick="togglePreference('thousand')">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LIST DISPLAY ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="prefListDisplay">📋 List Display Options</div>
+        <div class="muted" data-i18n="prefListDisplayDesc">Customize how expenses are displayed</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefItemsPerPage">Items Per Page</div>
+      <div class="pref-desc" data-i18n="prefItemsPerPageDesc">Number of expenses shown per page in lists</div>
+      <select class="input-field" id="itemsPerPage" onchange="savePreferences()">
+        <option value="10">10 items</option>
+        <option value="25">25 items</option>
+        <option value="50">50 items</option>
+        <option value="100">100 items</option>
+      </select>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefSortBy">Sort By</div>
+      <div class="pref-desc" data-i18n="prefSortByDesc">Default sorting for expense lists</div>
+      <select class="input-field" id="sortBy" onchange="savePreferences()">
+        <option value="latest">Latest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="highest">Highest Amount</option>
+        <option value="lowest">Lowest Amount</option>
+        <option value="category">Category A-Z</option>
+      </select>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefViewPreferences">View Preferences</div>
+      <label class="checkbox-item">
+        <input type="checkbox" id="compactView" onchange="savePreferences()" />
+        <span class="checkbox-label" data-i18n="prefCompactView">Compact List View</span>
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" id="showCategoryColor" checked onchange="savePreferences()" />
+        <span class="checkbox-label" data-i18n="prefColorCoding">Show Category Color Coding</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- ============ MIDNIGHT RESET ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="prefDailyReset">🕐 Daily Reset Settings</div>
+        <div class="muted" data-i18n="prefDailyResetDesc">When your daily spending limit resets</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefResetTime">Reset Time</div>
+      <div class="pref-desc" data-i18n="prefResetTimeDesc">Time of day when daily limits refresh (24-hour format)</div>
+      <input type="time" class="input-field" id="resetTime" value="00:00" onchange="savePreferences()" />
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefTimezone">Timezone</div>
+      <div class="pref-desc" data-i18n="prefTimezoneDesc">Your local timezone for date calculations</div>
+      <select class="input-field" id="timezone" onchange="savePreferences()">
+        <option value="IST">IST (UTC+5:30) - India</option>
+        <option value="UTC">UTC (UTC+0)</option>
+        <option value="GMT">GMT (UTC+0)</option>
+        <option value="EST">EST (UTC-5) - Eastern</option>
+        <option value="CST">CST (UTC-6) - Central</option>
+        <option value="MST">MST (UTC-7) - Mountain</option>
+        <option value="PST">PST (UTC-8) - Pacific</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ============ CATEGORY CUSTOMIZATION ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="prefCustomCategories">🏷️ Custom Categories</div>
+        <div class="muted" data-i18n="prefCustomCategoriesDesc">Add or manage your expense categories</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefAddCategory">Add Custom Category</div>
+      <div class="pref-desc" data-i18n="prefAddCategoryDesc">Create a new category for your needs</div>
+      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <input type="text" class="input-field" id="newCategory" placeholder="Enter category name..." />
+        <button class="btn btn-primary" onclick="addCategory()" data-i18n="prefAddBtn">Add</button>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefYourCategories">Your Custom Categories</div>
+      <div id="customCategoriesList">No custom categories yet</div>
+    </div>
+  </section>
+
+  <!-- ============ RECURRING EXPENSES ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="prefRecurring">🔄 Recurring Expenses</div>
+        <div class="muted" data-i18n="prefRecurringDesc">Enable recurring expense tracking</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefRecurring">Recurring Expenses</div>
+      <div class="pref-item">
+        <div class="pref-label">
+          <span class="pref-label-title" data-i18n="prefTrackRecurring">Track Recurring Items</span>
+          <span class="pref-label-desc" data-i18n="prefTrackRecurringDesc">Enable subscriptions & monthly bills</span>
+        </div>
+        <div class="toggle" id="recurringToggle" onclick="togglePreference('recurring')">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUDGET RESET PERIOD ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="prefBudgetPeriod">📊 Budget Period Settings</div>
+        <div class="muted" data-i18n="prefBudgetPeriodDesc">When budget cycles reset</div>
+      </div>
+    </div>
+
+    <div class="pref-section">
+      <div class="pref-title" data-i18n="prefResetDay">Monthly Reset Day</div>
+      <div class="pref-desc" data-i18n="prefResetDayDesc">What date each month does your budget reset?</div>
+      <select class="input-field" id="resetDay" onchange="savePreferences()">
+        <option value="1">1st of Month</option>
+        <option value="7">7th of Month</option>
+        <option value="15">15th of Month</option>
+        <option value="last">Last Day of Month</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ============ ACTIONS ============ -->
+  <section class="card">
+    <div class="button-group">
+      <button class="btn btn-primary" onclick="saveAllPreferences()" data-i18n="saveAllBtn">💾 Save All</button>
+      <button class="btn btn-secondary" onclick="resetPreferences()" data-i18n="resetDefaultsBtn">🔄 Reset Defaults</button>
+    </div>
+  </section>
+</div>
+
+<script>
+  const PREFERENCES_KEY = "userPreferences";
+  const API_BASE = (window.location.port && window.location.port !== '5003')
+    ? `http://${window.location.hostname}:5003` 
+    : '';
+
+  // Apply theme from localStorage
+  function applyTheme() {
+    const theme = localStorage.getItem("appTheme") || "light";
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+  applyTheme();
+
+  const DEFAULT_PREFERENCES = {
+    defaultCategory: "",
+    quickAdd: false,
+    skipDesc: false,
+    dateFormat: "DD/MM/YYYY",
+    weekStart: "Monday",
+    decimalPlaces: 2,
+    thousand: true,
+    itemsPerPage: "25",
+    sortBy: "latest",
+    compactView: false,
+    showCategoryColor: true,
+    resetTime: "00:00",
+    timezone: "IST",
+    recurring: false,
+    resetDay: "1",
+    customCategories: []
+  };
+
+  let currentPreferences = { ...DEFAULT_PREFERENCES };
+
+  function getHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  }
+
+  async function fetchPreferences() {
+    try {
+      const res = await fetch(`${API_BASE}/api/preferences`, { headers: getHeaders() });
+      if (res.ok) currentPreferences = { ...DEFAULT_PREFERENCES, ...(await res.json()) };
+    } catch (e) { console.error(e); }
+  }
+
+  async function savePreferences() {
+    const prefs = currentPreferences;
+    
+    prefs.defaultCategory = document.getElementById("defaultCategory").value;
+    prefs.quickAdd = document.getElementById("quickAddToggle").classList.contains("active");
+    prefs.skipDesc = document.getElementById("skipDescToggle").classList.contains("active");
+    prefs.dateFormat = document.getElementById("dateFormat").value;
+    prefs.weekStart = document.getElementById("weekStart").value;
+    prefs.decimalPlaces = parseInt(document.getElementById("decimalPlaces").value);
+    prefs.thousand = document.getElementById("thousandToggle").classList.contains("active");
+    prefs.itemsPerPage = document.getElementById("itemsPerPage").value;
+    prefs.sortBy = document.getElementById("sortBy").value;
+    prefs.compactView = document.getElementById("compactView").checked;
+    prefs.showCategoryColor = document.getElementById("showCategoryColor").checked;
+    prefs.resetTime = document.getElementById("resetTime").value;
+    prefs.timezone = document.getElementById("timezone").value;
+    prefs.recurring = document.getElementById("recurringToggle").classList.contains("active");
+    prefs.resetDay = document.getElementById("resetDay").value;
+
+    try {
+      await fetch(`${API_BASE}/api/preferences`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(prefs)
+      });
+    } catch (e) { console.error('Failed to save preferences', e); }
+  }
+
+  async function saveAllPreferences() {
+    await savePreferences();
+    alert("✓ All preferences saved!");
+  }
+
+  async function resetPreferences() {
+    if (confirm("Reset all preferences to defaults?")) {
+      currentPreferences = { ...DEFAULT_PREFERENCES };
+      await savePreferences();
+      updateUI();
+      alert("✓ Preferences reset!");
+    }
+  }
+
+  function togglePreference(key) {
+    const toggleId = key + "Toggle";
+    const toggle = document.getElementById(toggleId);
+    toggle.classList.toggle("active");
+    savePreferences();
+  }
+
+  async function addCategory() {
+    const input = document.getElementById("newCategory");
+    const categoryName = input.value.trim();
+
+    if (!categoryName) {
+      alert("Please enter a category name!");
+      return;
+    }
+
+    // Use the settings/categories endpoint for consistency
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/categories`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ category: categoryName })
+      });
+      if (res.ok) {
+        input.value = "";
+        loadCustomCategories();
+        alert("✓ Category added!");
+      }
+    } catch (e) {
+      alert("Failed to add category");
+    }
+  }
+
+  async function deleteCategory(category) {
+    if (confirm(`Delete "${category}"?`)) {
+      try {
+        await fetch(`${API_BASE}/api/settings/categories/${category}`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+        loadCustomCategories();
+      } catch (e) { alert("Failed to delete category"); }
+    }
+  }
+
+  async function loadCustomCategories() {
+    const list = document.getElementById("customCategoriesList");
+    try {
+      const res = await fetch(`${API_BASE}/api/settings/categories`, { headers: getHeaders() });
+      const data = await res.json();
+      const categories = data.categories || [];
+      
+      // Filter out defaults to show only custom ones if desired, or show all.
+      // For now showing all that are not in hardcoded default list might be complex, 
+      // so we just show what the API returns.
+      
+      if (categories.length === 0) {
+        list.innerHTML = "No custom categories yet";
+        return;
+      }
+
+      list.innerHTML = categories.map(cat => `
+        <div class="checkbox-item">
+          <span class="checkbox-label">📌 ${cat}</span>
+          <button class="btn btn-secondary" onclick="deleteCategory('${cat}')" style="padding: 4px 8px; font-size: 11px;">Delete</button>
+        </div>
+      `).join("");
+    } catch (e) {
+      list.innerHTML = "Error loading categories";
+    }
+  }
+
+  async function loadPreferences() {
+    await fetchPreferences();
+    updateUI();
+    loadCustomCategories();
+  }
+
+  function updateUI() {
+    const prefs = currentPreferences;
+
+    document.getElementById("defaultCategory").value = prefs.defaultCategory;
+    if (prefs.quickAdd) document.getElementById("quickAddToggle").classList.add("active");
+    if (prefs.skipDesc) document.getElementById("skipDescToggle").classList.add("active");
+    document.getElementById("dateFormat").value = prefs.dateFormat;
+    document.getElementById("weekStart").value = prefs.weekStart;
+    document.getElementById("decimalPlaces").value = prefs.decimalPlaces;
+    if (prefs.thousand) document.getElementById("thousandToggle").classList.add("active");
+    document.getElementById("itemsPerPage").value = prefs.itemsPerPage;
+    document.getElementById("sortBy").value = prefs.sortBy;
+    document.getElementById("compactView").checked = prefs.compactView;
+    document.getElementById("showCategoryColor").checked = prefs.showCategoryColor;
+    document.getElementById("resetTime").value = prefs.resetTime;
+    document.getElementById("timezone").value = prefs.timezone;
+    if (prefs.recurring) document.getElementById("recurringToggle").classList.add("active");
+    document.getElementById("resetDay").value = prefs.resetDay;
+  }
+
+  window.addCategory = addCategory;
+  window.deleteCategory = deleteCategory;
+  window.savePreferences = savePreferences;
+  window.saveAllPreferences = saveAllPreferences;
+  window.resetPreferences = resetPreferences;
+  window.togglePreference = togglePreference;
+
+  loadPreferences();
+</script>
+<script src="translations.js"></script>
+</body>
+</html>

@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Expense Tracking Web-Application— Auth</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --primary: #6366f1; /* Indigo */
+      --primary-dark: #4f46e5;
+      --secondary: #f59e0b; /* Amber */
+      --accent: #ec4899; /* Pink */
+      --muted: #64748b;
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --card: rgba(255, 255, 255, 0.95);
+      --card-dark: rgba(30, 41, 59, 0.95);
+      --text: #1e293b;
+      --text-light: #f8fafc;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      --shadow-hover: 0 30px 80px rgba(0, 0, 0, 0.15);
+      --radius: 16px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: var(--transition);
+      animation: slideIn 0.6s ease-out;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-4px);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo-section {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border-radius: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: white;
+      box-shadow: 0 16px 40px rgba(99, 102, 241, 0.3);
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .logo-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 8px 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo-subtitle {
+      font-size: 16px;
+      color: #374151;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    h1 { display: none; } /* Hide old h1 */
+
+    h2 {
+      font-size: 24px;
+      margin: 0 0 20px 0;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    p.lead {
+      margin: 0 0 20px 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
+      width: 100%;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 2px solid rgba(100, 116, 139, 0.2);
+      margin-top: 0;
+      font-size: 16px;
+      background: rgba(248, 250, 252, 0.8);
+      transition: var(--transition);
+      backdrop-filter: blur(10px);
+      box-sizing: border-box;
+    }
+
+    input[type="password"] {
+      padding-right: 45px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .toggle-link {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: 0;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .toggle-link:hover {
+      color: var(--primary);
+    }
+
+    .row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 28px;
+      flex-direction: column;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      border: 0;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text);
+      border: 2px solid rgba(100, 116, 139, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn.secondary:hover {
+      background: white;
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .small {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 16px;
+      text-align: center;
+      display: block;
+    }
+
+    .msg {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .msg.error {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+    }
+
+    .msg.success {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #059669;
+      border: 1px solid #6ee7b7;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden { display: none; }
+
+    .pw-meter {
+      height: 10px;
+      border-radius: 8px;
+      background: rgba(100, 116, 139, 0.2);
+      margin-top: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pw-meter > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #3b82f6);
+      transition: width 0.3s ease;
+      border-radius: 8px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .continue-btn {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 16px; }
+      .logo-text { font-size: 24px; }
+      .card { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+
+<script>
+  // single global currentKey to avoid duplicate redeclare issues
+  if (typeof window.__EXP_CURRENT_KEY__ === 'undefined') window.__EXP_CURRENT_KEY__ = 'currentUser';
+  const CURRENT_KEY = window.__EXP_CURRENT_KEY__;
+  const USERS_KEY = 'users';
+  const SALARY_KEY = 'salary';
+  // NOTE: This auth page will NOT auto-redirect to dashboard on load.
+  // If a valid currentUser exists you may click "Continue to dashboard" manually.
+</script>
+
+<div class="wrap">
+  <div class="logo-section">
+    <div class="logo-icon">💰</div>
+    <div class="logo-text">Expense Tracker</div>
+    <p class="logo-subtitle">Manage your finances smartly</p>
+
+    <div class="continue-btn">
+      <!-- Manual continue if already signed in (no auto-redirect) -->
+      <button id="continueBtn" class="btn secondary hidden">Continue to dashboard</button>
+    </div>
+  </div>
+
+  <!-- SIGN UP (visible by default) -->
+  <div class="card" id="signupCard">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 data-i18n="signupTitle">Create account</h2>
+      <div>
+        <button class="toggle-link" id="showSignInBtn">Sign In</button>
+      </div>
+    </div>
+
+    <form id="signupForm" autocomplete="off" novalidate>
+      <label for="suName" data-i18n="fullNameLabel">Full name</label>
+      <input id="suName" type="text" placeholder="Your name" required />
+
+      <label for="suEmail" data-i18n="emailLabel">Email</label>
+      <input id="suEmail" type="email" placeholder="you@domain.com" required />
+
+      <label for="suPassword" data-i18n="passwordLabel">Password</label>
+      <div style="position:relative">
+        <input id="suPassword" type="password" placeholder="At least 8 characters" required />
+        <button type="button" class="toggle-link" id="toggleSuPass" style="position:absolute;right:14px;top:16px;font-weight:600">Show</button>
+      </div>
+
+      <label for="suConfirm" data-i18n="confirmPasswordLabel">Confirm Password</label>
+      <div style="position:relative">
+        <input id="suConfirm" type="password" placeholder="Re-enter password" required />
+        <button type="button" class="toggle-link" id="toggleSuConfirm" style="position:absolute;right:14px;top:16px;font-weight:600">Show</button>
+      </div>
+
+      <div class="pw-meter" aria-hidden><i id="suPwBar" style="width:0%"></i></div>
+      <div class="small" data-i18n="passwordStrength">Password strength: <strong id="suPwStrength">—</strong></div>
+
+      <label for="suNote" style="margin-top:10px" data-i18n="noteOptionalLabel">Note (optional)</label>
+      <input id="suNote" type="text" placeholder="Optional note" />
+
+      <div class="row">
+        <button class="btn" type="submit" data-i18n="signupBtn">Sign up</button>
+        <button type="button" class="btn secondary" id="toSignInSmall" data-i18n="alreadyAccount">Already have an account? Sign in</button>
+      </div>
+
+      <div id="signupMsg" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <!-- SIGN IN (hidden until user requests it) -->
+  <div class="card hidden" id="signinCard">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 data-i18n="loginTitle">Sign In</h2>
+      <div>
+        <button class="toggle-link" id="showSignUpBtn" data-i18n="backToSignup">Back to Sign Up</button>
+      </div>
+    </div>
+
+    <form id="signinForm" autocomplete="off" novalidate>
+      <label for="siEmail" data-i18n="emailLabel">Email</label>
+      <input id="siEmail" type="email" placeholder="you@domain.com" required />
+
+      <label for="siPassword" data-i18n="passwordLabel">Password</label>
+      <div style="position:relative">
+        <input id="siPassword" type="password" placeholder="Your password" required />
+        <button type="button" class="toggle-link" id="toggleSiPass" style="position:absolute;right:14px;top:16px;font-weight:600">Show</button>
+      </div>
+
+      <div style="text-align: right; margin-top: 8px;">
+        <a href="#" id="forgotPassLink" class="small" style="text-decoration: none; color: var(--primary);" data-i18n="forgotPassword">Forgot Password?</a>
+      </div>
+
+      <div class="row">
+        <button class="btn" type="submit" data-i18n="signinBtn">Sign in</button>
+        <button type="button" class="btn secondary" id="toSignUpSmall" data-i18n="createNewAccount">Create new account</button>
+      </div>
+
+      <div id="signinMsg" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <!-- FORGOT PASSWORD (hidden until user requests it) -->
+  <div class="card hidden" id="forgotCard">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 data-i18n="resetPasswordTitle">Reset Password</h2>
+      <div>
+        <button class="toggle-link" id="backToSignInBtn" data-i18n="backToSignin">Back to Sign In</button>
+      </div>
+    </div>
+
+    <p class="lead" data-i18n="resetPasswordDesc">Enter your email address and we'll send you a link to reset your password.</p>
+
+    <form id="forgotForm" autocomplete="off" novalidate>
+      <label for="fpEmail" data-i18n="emailLabel">Email</label>
+      <input id="fpEmail" type="email" placeholder="you@domain.com" required />
+
+      <div class="row">
+        <button class="btn" type="submit" data-i18n="sendResetLink">Send Reset Link</button>
+        <button type="button" class="btn secondary" id="cancelForgotBtn" data-i18n="backToSignin">Back to Sign In</button>
+      </div>
+
+      <div id="forgotMsg" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <!-- SALARY ENQUIRY (hidden; shown only after signup) -->
+  <div class="card hidden" id="salaryCard">
+    <h2>Quick salary info</h2>
+    <p class="lead">Enter your monthly salary (used for budgeting recommendations).</p>
+
+    <form id="salaryForm" autocomplete="off" novalidate>
+      <label for="salaryInput">Monthly salary (₹)</label>
+      <input id="salaryInput" type="number" min="0" step="0.01" placeholder="e.g., 25000" />
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn" type="submit">Save & Continue</button>
+      </div>
+
+      <div id="salaryMsg" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <div class="small"></div>
+</div>
+
+<script>
+/* ======= helpers ======= */
+const API_BASE_URL = (window.location.port && window.location.port !== '5003')
+  ? `http://${window.location.hostname}:5003` 
+  : '';
+
+/* ======= refs ======= */
+const continueBtn = document.getElementById('continueBtn');
+
+const signupCard = document.getElementById('signupCard');
+const signinCard = document.getElementById('signinCard');
+const salaryCard = document.getElementById('salaryCard');
+const forgotCard = document.getElementById('forgotCard');
+
+const signupForm = document.getElementById('signupForm');
+const signinForm = document.getElementById('signinForm');
+const salaryForm = document.getElementById('salaryForm');
+const forgotForm = document.getElementById('forgotForm');
+
+const suName = document.getElementById('suName');
+const suEmail = document.getElementById('suEmail');
+const suPassword = document.getElementById('suPassword');
+const suConfirm = document.getElementById('suConfirm');
+const suNote = document.getElementById('suNote');
+
+const siEmail = document.getElementById('siEmail');
+const siPassword = document.getElementById('siPassword');
+
+const suPwBar = document.getElementById('suPwBar');
+const suPwStrength = document.getElementById('suPwStrength');
+
+const signupMsg = document.getElementById('signupMsg');
+const signinMsg = document.getElementById('signinMsg');
+const salaryMsg = document.getElementById('salaryMsg');
+const forgotMsg = document.getElementById('forgotMsg');
+
+/* ======= UI behavior ======= */
+document.getElementById('showSignInBtn').addEventListener('click', showSignIn);
+document.getElementById('toSignInSmall').addEventListener('click', showSignIn);
+document.getElementById('showSignUpBtn').addEventListener('click', showSignUp);
+document.getElementById('toSignUpSmall').addEventListener('click', showSignUp);
+document.getElementById('forgotPassLink').addEventListener('click', showForgot);
+document.getElementById('backToSignInBtn').addEventListener('click', showSignIn);
+document.getElementById('cancelForgotBtn').addEventListener('click', showSignIn);
+
+function showSignIn(){
+  signupCard.classList.add('hidden');
+  salaryCard.classList.add('hidden');
+  forgotCard.classList.add('hidden');
+  signinCard.classList.remove('hidden');
+  setTimeout(()=> siEmail.focus(), 120);
+}
+function showSignUp(){
+  signinCard.classList.add('hidden');
+  salaryCard.classList.add('hidden');
+  forgotCard.classList.add('hidden');
+  signupCard.classList.remove('hidden');
+  setTimeout(()=> suName.focus(), 120);
+}
+function showSalaryFor(email){
+  sessionStorage.setItem('showSalaryFor', (email||'').toLowerCase());
+  signupCard.classList.add('hidden');
+  signinCard.classList.add('hidden');
+  forgotCard.classList.add('hidden');
+  salaryCard.classList.remove('hidden');
+  setTimeout(()=> document.getElementById('salaryInput').focus(), 120);
+}
+function showForgot(e) {
+  if (e) e.preventDefault();
+  signupCard.classList.add('hidden');
+  signinCard.classList.add('hidden');
+  salaryCard.classList.add('hidden');
+  forgotCard.classList.remove('hidden');
+  setTimeout(()=> document.getElementById('fpEmail').focus(), 120);
+}
+
+/* ======= password helpers ======= */
+function passwordStrength(pw){
+  let score = 0;
+  if (!pw) return {score:0,label:'Too short'};
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  let label='Very weak';
+  if (score <= 1) label='Weak';
+  else if (score === 2) label='Okay';
+  else if (score === 3) label='Good';
+  else label='Strong';
+  return {score,label};
+}
+suPassword.addEventListener('input', (e)=>{
+  const {score,label} = passwordStrength(e.target.value);
+  const pct = Math.min(100, (score/4)*100);
+  suPwBar.style.width = pct + '%';
+  if (score <= 1) suPwBar.style.background = 'linear-gradient(90deg,#ff6b6b,#ffb86b)';
+  else if (score === 2) suPwBar.style.background = 'linear-gradient(90deg,#ffb86b,#ffd86b)';
+  else if (score === 3) suPwBar.style.background = 'linear-gradient(90deg,#8bd46b,#b6e86b)';
+  else suPwBar.style.background = 'linear-gradient(90deg,#4ade80,#06b6d4)';
+  suPwStrength.innerText = label;
+});
+document.getElementById('toggleSuPass').addEventListener('click', ()=> togglePass('suPassword','toggleSuPass'));
+document.getElementById('toggleSuConfirm').addEventListener('click', ()=> togglePass('suConfirm','toggleSuConfirm'));
+document.getElementById('toggleSiPass').addEventListener('click', ()=> togglePass('siPassword','toggleSiPass'));
+function togglePass(inputId, toggleId){
+  const el = document.getElementById(inputId);
+  const t = document.getElementById(toggleId);
+  if (!el || !t) return;
+  if (el.type === 'password'){ el.type = 'text'; t.innerText = 'Hide'; }
+  else { el.type = 'password'; t.innerText = 'Show'; }
+}
+
+/* ======= form handlers ======= */
+function isValidEmail(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+function showMessage(areaEl, type, text){ areaEl.innerHTML = `<div class="msg ${type==='error'?'error':'success'}">${text}</div>`; }
+
+/* Sign-up */
+signupForm.addEventListener('submit', async (ev) => {
+  ev.preventDefault(); signupMsg.innerHTML = '';
+
+  const name = (suName.value || '').trim();
+  const email = (suEmail.value || '').trim().toLowerCase();
+  const password = suPassword.value || '';
+  const confirm = suConfirm.value || '';
+  const note = (suNote.value || '').trim();
+
+  if (!name) { showMessage(signupMsg,'error','Please enter your name.'); return; }
+  if (!email || !isValidEmail(email)) { showMessage(signupMsg,'error','Please enter a valid email.'); return; }
+  if (!password || password.length < 8) { showMessage(signupMsg,'error','Password must be at least 8 characters.'); return; }
+  if (password !== confirm) { showMessage(signupMsg,'error','Passwords do not match.'); return; }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Store token in localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      showMessage(signupMsg,'success','Account created successfully. Redirecting...');
+      setTimeout(() => { location.href = 'dashboard.html'; }, 650);
+    } else {
+      const errorText = data.message || `Server responded with status ${response.status}.`;
+      showMessage(signupMsg, 'error', `Signup failed: ${errorText}`);
+    }
+  } catch (error) {
+    showMessage(signupMsg, 'error', `Network Error: Could not connect to the server.`);
+  }
+});
+
+/* Sign-in */
+signinForm.addEventListener('submit', async (ev) => {
+  ev.preventDefault(); signinMsg.innerHTML = '';
+
+  const email = (siEmail.value || '').trim().toLowerCase();
+  const password = siPassword.value || '';
+
+  if (!email || !password) { showMessage(signinMsg,'error','Please enter email and password.'); return; }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Store token in localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      showMessage(signinMsg,'success','Signed in. Redirecting to dashboard...');
+      setTimeout(() => { location.href = 'dashboard.html'; }, 650);
+    } else {
+      const errorText = data.message || `Server responded with status ${response.status}.`;
+      showMessage(signinMsg, 'error', `Sign-in failed: ${errorText}`);
+    }
+  } catch (error) {
+    showMessage(signinMsg, 'error', `Network Error: Could not connect to the server.`);
+  }
+});
+
+/* Forgot Password */
+forgotForm.addEventListener('submit', async (ev) => {
+  ev.preventDefault(); forgotMsg.innerHTML = '';
+
+  const email = (document.getElementById('fpEmail').value || '').trim().toLowerCase();
+  if (!email || !isValidEmail(email)) { showMessage(forgotMsg,'error','Please enter a valid email.'); return; }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showMessage(forgotMsg, 'success', data.message);
+    } else {
+      console.error('Forgot Password Failed:', data);
+      showMessage(forgotMsg, 'error', data.message || 'An error occurred.');
+    }
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    showMessage(forgotMsg, 'error', `Network Error: Could not connect to the server.`);
+  }
+});
+
+/* Salary submit */
+salaryForm.addEventListener('submit', async (ev) => {
+  ev.preventDefault(); salaryMsg.innerHTML = '';
+
+  const raw = document.getElementById('salaryInput').value;
+  const val = Number(raw);
+  if (!raw || isNaN(val) || val <= 0) { showMessage(salaryMsg,'error','Enter a valid salary amount (> 0).'); return; }
+
+  try {
+    const token = localStorage.getItem('token');
+    await fetch(`${API_BASE_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ salary: val })
+    });
+  } catch (e) {
+    console.error("Failed to save salary to server", e);
+  }
+
+  sessionStorage.removeItem('showSalaryFor');
+  showMessage(salaryMsg,'success','Salary saved. Redirecting to dashboard...');
+  setTimeout(()=> { location.href = 'dashboard.html'; }, 650);
+});
+
+/* ======= init ======= */
+document.addEventListener('DOMContentLoaded', () => {
+
+  // If a logged-in user exists, reveal "Continue to dashboard" (manual)
+  try {
+    const raw = localStorage.getItem(CURRENT_KEY);
+    if (raw) {
+      let cur = null;
+      try { cur = JSON.parse(raw); } catch(e){ cur = raw; }
+      if (cur) {
+        continueBtn.classList.remove('hidden');
+        continueBtn.onclick = () => { location.href = 'dashboard.html'; };
+      } else {
+        // invalid leftover - clear it
+        localStorage.removeItem(CURRENT_KEY);
+      }
+    }
+  } catch(e){ console.warn(e); localStorage.removeItem(CURRENT_KEY); }
+
+  // If session flag indicates we just signed up and salary not set, show salary
+  const sEmail = sessionStorage.getItem('showSalaryFor');
+  const savedSalary = localStorage.getItem(SALARY_KEY);
+  if (sEmail && !savedSalary) {
+    showSalaryFor(sEmail);
+    return;
+  }
+
+  // default: show sign up
+  showSignUp();
+});
+</script>
+<script src="translations.js"></script>
+
+</body>
+</html>

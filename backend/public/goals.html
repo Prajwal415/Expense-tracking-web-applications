@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <title>Spending Goals — Expense Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #3f67e6;
+      --accent-soft: #e0e7ff;
+      --accent-dark: #2949c0;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --muted: #6b7280;
+      --text: #0b2340;
+      --text-soft: #9ca3af;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      --radius-lg: 18px;
+      --radius-sm: 10px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #020617;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-soft: #0b1120;
+      --accent-dark: #2563eb;
+      --danger: #f97373;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --muted: #9ca3af;
+      --text: #e5e7eb;
+      --text-soft: #6b7280;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(139,92,246,0.18), transparent 55%),
+                  var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span {
+      font-size: 28px;
+    }
+
+    .back-link {
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid rgba(148,163,184,0.25);
+      font-size: 13px;
+    }
+
+    .back-link:hover {
+      background: rgba(148,163,184,0.2);
+    }
+
+    .settings-pill {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .settings-pill span {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 18px 18px 20px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(96,165,250,0.12), transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all var(--transition);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(148,163,184,0.14);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+      box-shadow: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(63, 103, 230, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .goal-card {
+      background: linear-gradient(135deg, rgba(96,165,250,0.08), rgba(139,92,246,0.08));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .goal-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(96,165,250,0.1), transparent 60%);
+      pointer-events: none;
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .goal-title {
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .goal-period {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .goal-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .goal-actions button {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: rgba(148,163,184,0.2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) 100%);
+      border-radius: 999px;
+      transition: width var(--transition);
+    }
+
+    .progress-fill.warning {
+      background: linear-gradient(90deg, var(--warning) 0%, #d97706 100%);
+    }
+
+    .progress-fill.danger {
+      background: linear-gradient(90deg, var(--danger) 0%, #dc2626 100%);
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .progress-spent {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .progress-remaining {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .goal-stats {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148,163,184,0.2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-item {
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .empty-state-text {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .goal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .summary-card {
+      background: linear-gradient(135deg, rgba(96,165,250,0.1), rgba(139,92,246,0.1));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 15px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .badge-success {
+      background: rgba(34,197,94,0.15);
+      color: var(--success);
+    }
+
+    .badge-warning {
+      background: rgba(245,158,11,0.15);
+      color: var(--warning);
+    }
+
+    .badge-danger {
+      background: rgba(239,68,68,0.15);
+      color: var(--danger);
+    }
+
+    @media (max-width: 768px) {
+      .goal-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="back-link" href="dashboard.html" data-i18n="backToDashboard">← Back to Dashboard</a>
+      <h1 data-i18n="goalsHeader"><span>🎯</span> Spending Goals</h1>
+    </div>
+    <div class="settings-pill">
+      Theme: <span id="themeLabel">Light</span> · Currency: <span id="currencyLabel">INR</span>
+    </div>
+  </header>
+
+  <!-- ============ CREATE GOAL FORM ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="createGoal">➕ Create New Goal</div>
+        <div class="muted">Set spending limits for any category</div>
+      </div>
+    </div>
+
+    <form id="goalForm" onsubmit="addGoal(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label data-i18n="categoryLabel">Category</label>
+          <input type="text" id="goalCategory" placeholder="Enter category (e.g., Food, Shopping, Travel...)" list="categoryList" required />
+          <datalist id="categoryList">
+            <option value="Food">
+            <option value="Shopping">
+            <option value="Travel">
+            <option value="Medical">
+            <option value="Education">
+            <option value="Entertainment">
+            <option value="Rent">
+            <option value="Utilities">
+            <option value="Fitness">
+            <option value="Insurance">
+            <option value="Other">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label data-i18n="budgetLimit">Budget Limit (₹)</label>
+          <input type="number" id="goalAmount" placeholder="5000" min="0" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Time Period</label>
+          <select id="goalPeriod" required>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Alert Threshold (%)</label>
+          <input type="number" id="goalAlert" placeholder="80" min="0" max="100" value="80" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">🎯 Create Goal</button>
+    </form>
+  </section>
+
+  <!-- ============ GOALS SUMMARY ============ -->
+  <section class="card" id="summarySection" style="display: none;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">📊 Goals Summary</div>
+        <div class="muted">Overview of all your spending goals</div>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total Goals</div>
+        <div class="summary-value" id="totalGoals">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">On Track</div>
+        <div class="summary-value" id="goalsOnTrack" style="color: var(--success);">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Warning</div>
+        <div class="summary-value" id="goalsWarning" style="color: var(--warning);">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Exceeded</div>
+        <div class="summary-value" id="goalsExceeded" style="color: var(--danger);">0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GOALS LIST ============ -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" data-i18n="yourGoals">🎯 Your Goals</div>
+        <div class="muted">Track progress towards your spending targets</div>
+      </div>
+    </div>
+
+    <div id="goalsContainer"></div>
+  </section>
+
+  <!-- ============ SUGGESTIONS ============ -->
+  <section class="card" id="suggestionsSection" style="display: none;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">💡 Suggestions</div>
+        <div class="muted">Tips to help you stay within budget</div>
+      </div>
+    </div>
+
+    <div id="suggestionsContainer"></div>
+  </section>
+</div>
+
+<script>
+  const SETTINGS_KEY = "userSettings";
+  const EXPENSES_KEY = "userExpenses";
+  const GOALS_KEY = "userGoals";
+  const STORAGE_MODE_KEY = "storageMode";
+  const API_BASE = (window.location.port && window.location.port !== '5003')
+    ? `http://${window.location.hostname}:5003` 
+    : '';
+  const API_URL = `${API_BASE}/api`;
+
+  const CURRENCY_SYMBOLS = {
+    INR: "₹", USD: "$", EUR: "€", GBP: "£", JPY: "¥", AUD: "A$", CAD: "C$"
+  };
+
+  const CATEGORY_EMOJI = {
+    Food: "🍔", Shopping: "🛍️", Travel: "✈️", Medical: "🏥",
+    Education: "📚", Entertainment: "🎬", Rent: "🏠", Utilities: "⚡",
+    Fitness: "💪", Insurance: "🛡️", Other: "📌"
+  };
+
+  let globalSettings = {};
+
+  function getCurrencySymbol() {
+    const c = globalSettings.currency || "INR";
+    return CURRENCY_SYMBOLS[c] || c + " ";
+  }
+
+  async function applySettingsToPage() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/preferences`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        globalSettings = await res.json();
+      }
+    } catch (e) { console.error("Failed to load settings", e); }
+
+    const theme = localStorage.getItem("appTheme") || "light";
+    const currency = globalSettings.currency || "INR";
+    document.documentElement.setAttribute("data-theme", theme);
+    document.getElementById("themeLabel").innerText = theme === "dark" ? "Dark" : "Light";
+    document.getElementById("currencyLabel").innerText = currency;
+    renderGoals();
+  }
+
+  // ============================================
+  // STORAGE MANAGER (MongoDB)
+  // ============================================
+  class StorageManager {
+    static getHeaders() {
+      const token = localStorage.getItem('token');
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    static getMode() {
+      return localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    }
+
+    static getLocalGoals() {
+      return JSON.parse(localStorage.getItem(GOALS_KEY) || '[]');
+    }
+
+    static saveLocalGoals(list) {
+      localStorage.setItem(GOALS_KEY, JSON.stringify(list));
+    }
+
+    static async fetchGoals() {
+      if (this.getMode() === 'local') {
+        return this.getLocalGoals();
+      }
+      const res = await fetch(`${API_URL}/goals`, { headers: this.getHeaders() });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      return await res.json();
+    }
+
+    static async saveGoal(goal) {
+      if (this.getMode() === 'local') {
+        const list = this.getLocalGoals();
+        const newGoal = { ...goal, _id: 'loc_' + Date.now() };
+        list.push(newGoal);
+        this.saveLocalGoals(list);
+        return newGoal;
+      }
+      const res = await fetch(`${API_URL}/goals`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(goal)
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      return await res.json();
+    }
+
+    static async deleteGoal(id) {
+      if (this.getMode() === 'local') {
+        let list = this.getLocalGoals();
+        list = list.filter(g => g._id !== id);
+        this.saveLocalGoals(list);
+        return true;
+      }
+      const res = await fetch(`${API_URL}/goals/${id}`, {
+        method: 'DELETE',
+        headers: this.getHeaders()
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      return true;
+    }
+  }
+
+  // ============================================
+  // DATA FETCHING
+  // ============================================
+
+  async function fetchExpenses() {
+    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    if (mode === 'local') {
+      return JSON.parse(localStorage.getItem(EXPENSES_KEY) || '[]');
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/expenses`, { // This is correct, goals need expense data
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("API failed");
+      return await res.json();
+    } catch (e) {
+      console.error("Failed to load expenses from MongoDB:", e);
+      return [];
+    }
+  }
+
+  async function fetchGoals() {
+    try {
+      return await StorageManager.fetchGoals();
+    } catch (e) {
+      console.error("Failed to load goals:", e);
+      // Don't alert on load to avoid spamming, just log
+      return [];
+    }
+  }
+
+  async function saveGoalToDB(goal) {
+    try {
+      await StorageManager.saveGoal(goal);
+      alert("✓ Goal saved to MongoDB!");
+      return true;
+    } catch (e) {
+      console.error("Error saving goal:", e);
+      alert(`Failed to save goal. Server says: ${e.message}\n\nEnsure 'node server.js' is running.`);
+      return false;
+    }
+  }
+
+  function getMonthStart() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  function getMonthEnd() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+
+  function getQuarterStart() {
+    const now = new Date();
+    const quarter = Math.floor(now.getMonth() / 3);
+    return new Date(now.getFullYear(), quarter * 3, 1);
+  }
+
+  function getQuarterEnd() {
+    const now = new Date();
+    const quarter = Math.floor(now.getMonth() / 3);
+    return new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+  }
+
+  function getYearStart() {
+    const now = new Date();
+    return new Date(now.getFullYear(), 0, 1);
+  }
+
+  function getYearEnd() {
+    const now = new Date();
+    return new Date(now.getFullYear(), 11, 31);
+  }
+
+  function getDateRangeForGoal(period) {
+    if (period === "monthly") return { start: getMonthStart(), end: getMonthEnd() };
+    if (period === "quarterly") return { start: getQuarterStart(), end: getQuarterEnd() };
+    if (period === "yearly") return { start: getYearStart(), end: getYearEnd() };
+  }
+
+  function filterExpensesByDate(expenses, startDate, endDate) {
+    return expenses.filter(e => {
+      const d = new Date(e.date);
+      return d >= startDate && d <= endDate;
+    });
+  }
+
+  function getCategoryEmoji(category) {
+    return CATEGORY_EMOJI[category] || "📌";
+  }
+
+  async function addGoal(event) {
+    event.preventDefault();
+    
+    const category = document.getElementById("goalCategory").value.trim();
+    const amount = parseFloat(document.getElementById("goalAmount").value);
+    const period = document.getElementById("goalPeriod").value;
+    const alertThreshold = parseInt(document.getElementById("goalAlert").value);
+
+    if (!category || !amount) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    const goal = {
+      category,
+      amount,
+      period,
+      alert: alertThreshold,
+      createdAt: new Date().toISOString()
+    };
+
+    const success = await saveGoalToDB(goal);
+    if (success) {
+      await renderGoals();
+      document.getElementById("goalForm").reset();
+    }
+  }
+
+  async function renderGoals() {
+    const [goals, expenses] = await Promise.all([fetchGoals(), fetchExpenses()]);
+    const container = document.getElementById("goalsContainer");
+
+    if (goals.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🎯</div>
+          <div class="empty-state-text">No goals created yet. Start by setting your first spending goal!</div>
+          <button class="btn btn-primary" onclick="document.getElementById('goalForm').scrollIntoView()">Create Goal</button>
+        </div>
+      `;
+      document.getElementById("summarySection").style.display = "none";
+      return;
+    }
+
+    let onTrack = 0, warning = 0, exceeded = 0;
+    const symbol = getCurrencySymbol();
+
+    const goalsHTML = goals.map(goal => {
+      const { start, end } = getDateRangeForGoal(goal.period);
+      const spent = filterExpensesByDate(expenses, start, end)
+        .filter(e => e.category === goal.category)
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      const percent = (spent / goal.amount * 100).toFixed(0);
+      const remaining = goal.amount - spent;
+      const status = spent > goal.amount ? "exceeded" : spent > (goal.amount * (goal.alert || 80) / 100) ? "warning" : "success";
+
+      if (status === "success") onTrack++;
+      else if (status === "warning") warning++;
+      else exceeded++;
+
+      const progressClass = status === "danger" ? "danger" : status === "warning" ? "warning" : "";
+
+      return `
+        <div class="goal-card">
+          <div class="goal-header">
+            <div class="goal-title">
+              ${getCategoryEmoji(goal.category)} ${goal.category}
+            </div>
+            <div class="goal-actions">
+              <span class="goal-period">${goal.period.charAt(0).toUpperCase() + goal.period.slice(1)}</span>
+              <button class="btn btn-danger" onclick="deleteGoalFromDB('${goal._id}')">🗑️</button>
+            </div>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-fill ${progressClass}" style="width: ${Math.min(percent, 100)}%"></div>
+          </div>
+
+          <div class="progress-info">
+            <div class="progress-spent">${symbol}${spent.toLocaleString('en-IN')}</div>
+            <div class="progress-remaining">${percent}% of ${symbol}${goal.amount.toLocaleString('en-IN')}</div>
+          </div>
+
+          <div class="goal-stats">
+            <div class="stat-item">
+              <div class="stat-value">${symbol}${Math.max(remaining, 0).toLocaleString('en-IN')}</div>
+              <div class="stat-label">Remaining</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">${percent}%</div>
+              <div class="stat-label">Progress</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">${status === "exceeded" ? "⚠️ Over" : status === "warning" ? "⚡ Alert" : "✅ On Track"}</div>
+              <div class="stat-label">Status</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    container.innerHTML = `<div class="goal-grid">${goalsHTML}</div>`;
+
+    // Update summary
+    document.getElementById("totalGoals").innerText = goals.length;
+    document.getElementById("goalsOnTrack").innerText = onTrack;
+    document.getElementById("goalsWarning").innerText = warning;
+    document.getElementById("goalsExceeded").innerText = exceeded;
+    document.getElementById("summarySection").style.display = "block";
+
+    updateSuggestions(goals, expenses);
+  }
+
+  function updateSuggestions(goals, expenses) {
+    const suggestions = [];
+
+    goals.forEach(goal => {
+      const { start, end } = getDateRangeForGoal(goal.period);
+      const spent = filterExpensesByDate(expenses, start, end)
+        .filter(e => e.category === goal.category)
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      const percent = (spent / goal.amount * 100);
+      const remaining = goal.amount - spent;
+      const symbol = getCurrencySymbol();
+
+      if (spent > goal.amount) {
+        suggestions.push(`🚨 <strong>${goal.category}</strong> budget exceeded by ${symbol}${(spent - goal.amount).toLocaleString('en-IN')}`);
+      } else if (percent > (goal.alert || 80)) {
+        const daysLeft = Math.ceil((new Date(end) - new Date()) / (1000 * 60 * 60 * 24));
+        suggestions.push(`⚡ <strong>${goal.category}</strong>: ${symbol}${remaining.toLocaleString('en-IN')} left for ${daysLeft} days`);
+      }
+    });
+
+    if (suggestions.length === 0) {
+      suggestions.push("✅ All goals are on track! Keep up the great spending discipline.");
+    }
+
+    const sugSection = document.getElementById("suggestionsSection");
+    const sugContainer = document.getElementById("suggestionsContainer");
+
+    if (suggestions.length > 0) {
+      sugContainer.innerHTML = suggestions.map(s => `<div style="padding: 10px; margin-bottom: 8px; background: rgba(63,103,230,0.08); border-left: 4px solid var(--accent); border-radius: 6px; font-size: 13px;">${s}</div>`).join("");
+      sugSection.style.display = "block";
+    }
+  }
+
+  async function deleteGoalFromDB(id) {
+    if(!confirm("Delete this goal?")) return;
+    try {
+      await StorageManager.deleteGoal(id);
+      renderGoals();
+    } catch (e) {
+      alert("Error deleting goal from MongoDB");
+    }
+  }
+
+  applySettingsToPage();
+</script>
+<script src="translations.js"></script>
+</body>
+</html>
