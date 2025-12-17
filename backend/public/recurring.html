@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <title>Recurring Expenses — Expense Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #3f67e6;
+      --accent-soft: #e0e7ff;
+      --text: #0b2340;
+      --muted: #6b7280;
+      --danger: #ef4444;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    }
+    :root[data-theme="dark"] {
+      --bg: #020617;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #60a5fa;
+      --accent-soft: #0b1120;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --shadow: 0 10px 40px rgba(15, 23, 42, 0.7);
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 800px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h1 { font-size: 24px; margin: 0; display: flex; align-items: center; gap: 10px; }
+    .back-link { text-decoration: none; color: var(--accent); font-weight: 600; font-size: 14px; }
+    
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover { opacity: 0.9; }
+
+    .recurring-list { display: grid; gap: 12px; }
+    .recurring-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 15px;
+      border-radius: 12px;
+    }
+    .rec-info h3 { margin: 0 0 4px 0; font-size: 16px; }
+    .rec-meta { font-size: 12px; color: var(--muted); }
+    .rec-amount { font-weight: 700; color: var(--accent); font-size: 16px; }
+    .btn-del {
+      background: rgba(239,68,68,0.1);
+      color: var(--danger);
+      border: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="dashboard.html" class="back-link">← Dashboard</a>
+    <h1>🔄 Recurring</h1>
+  </header>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Add Subscription / Bill</h3>
+    <div class="form-group">
+      <label>Name (e.g. Netflix, Rent)</label>
+      <input type="text" id="recName" placeholder="Enter name">
+    </div>
+    <div class="form-group">
+      <label>Amount (₹)</label>
+      <input type="number" id="recAmount" placeholder="0">
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div class="form-group">
+        <label>Frequency</label>
+        <select id="recFreq">
+          <option value="Monthly">Monthly</option>
+          <option value="Yearly">Yearly</option>
+          <option value="Weekly">Weekly</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Next Due Date</label>
+        <input type="date" id="recDate">
+      </div>
+    </div>
+    <button class="btn" onclick="addRecurring()">+ Add Recurring Expense</button>
+  </div>
+
+  <h3 style="margin-bottom: 10px;">Active Subscriptions</h3>
+  <div id="recurringList" class="recurring-list">
+    <!-- Items go here -->
+  </div>
+</div>
+
+<script>
+  const API_BASE = (window.location.port && window.location.port !== '5003') ? `http://${window.location.hostname}:5003` : '';
+  const API_URL = `${API_BASE}/api`;
+  const STORAGE_MODE_KEY = 'storageMode';
+
+  // Apply theme
+  const theme = localStorage.getItem("appTheme") || "light";
+  document.documentElement.setAttribute("data-theme", theme);
+
+  // Set default date to today
+  document.getElementById('recDate').valueAsDate = new Date();
+
+  async function loadRecurring() {
+    const list = document.getElementById('recurringList');
+    list.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">Loading...</div>';
+
+    try {
+      let items = [];
+      const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+      
+      if (mode === 'local') {
+        items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+      } else {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        // Using a custom endpoint or storing in user settings for now if specific endpoint doesn't exist
+        // For simplicity in this demo, we'll simulate fetching from a 'recurring' endpoint
+        // If your backend doesn't have this, you might need to add it or use local storage fallback
+        try {
+            const res = await fetch(`${API_URL}/recurring`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) items = await res.json();
+            else throw new Error('Endpoint not found');
+        } catch(e) {
+            // Fallback to local if API not ready
+            items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+        }
+      }
+
+      renderList(items);
+    } catch (e) {
+      console.error(e);
+      list.innerHTML = '<div style="text-align:center; color:var(--muted);">Failed to load items</div>';
+    }
+  }
+
+  function renderList(items) {
+    const list = document.getElementById('recurringList');
+    if (items.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">No recurring expenses yet.</div>';
+      return;
+    }
+
+    list.innerHTML = items.map((item, index) => `
+      <div class="recurring-item">
+        <div class="rec-info">
+          <h3>${item.name}</h3>
+          <div class="rec-meta">${item.frequency} • Next: ${new Date(item.nextDate).toLocaleDateString()}</div>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <div class="rec-amount">₹${item.amount}</div>
+          <button class="btn-del" onclick="deleteRecurring('${item.id || item._id}', ${index})">×</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function addRecurring() {
+    const name = document.getElementById('recName').value;
+    const amount = document.getElementById('recAmount').value;
+    const freq = document.getElementById('recFreq').value;
+    const date = document.getElementById('recDate').value;
+
+    if (!name || !amount || !date) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    const newItem = {
+      id: 'rec_' + Date.now(),
+      name,
+      amount: Number(amount),
+      frequency: freq,
+      nextDate: date,
+      active: true
+    };
+
+    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    
+    if (mode === 'local') {
+      const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+      items.push(newItem);
+      localStorage.setItem('recurringExpenses', JSON.stringify(items));
+      renderList(items);
+    } else {
+      // API logic here
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/recurring`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(newItem)
+        });
+        if(!res.ok) throw new Error('API Error');
+        loadRecurring();
+      } catch(e) {
+        // Fallback
+        const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+        items.push(newItem);
+        localStorage.setItem('recurringExpenses', JSON.stringify(items));
+        renderList(items);
+      }
+    }
+
+    // Clear form
+    document.getElementById('recName').value = '';
+    document.getElementById('recAmount').value = '';
+  }
+
+  async function deleteRecurring(id, index) {
+    if(!confirm("Stop tracking this recurring expense?")) return;
+
+    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    
+    if (mode === 'local') {
+      const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+      items.splice(index, 1);
+      localStorage.setItem('recurringExpenses', JSON.stringify(items));
+      renderList(items);
+    } else {
+       try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/recurring/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if(!res.ok) throw new Error('API Error');
+        loadRecurring();
+      } catch(e) {
+        // Fallback
+        const items = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+        items.splice(index, 1);
+        localStorage.setItem('recurringExpenses', JSON.stringify(items));
+        renderList(items);
+      }
+    }
+  }
+
+  loadRecurring();
+</script>
+</body>
+</html>

@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>Scan & Pay — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     :root {
@@ -206,14 +205,17 @@
 <!-- Payment Confirmation Modal -->
 <div class="modal" id="paymentConfirmModal" style="z-index: 2001;">
   <div style="text-align: center;">
-    <div style="font-size: 40px; margin-bottom: 10px;">🤔</div>
-    <h4>Payment Status</h4>
-    <p style="color: var(--muted); margin-bottom: 20px;">Did the payment complete successfully in your UPI app?</p>
+    <div style="font-size: 40px; margin-bottom: 10px;">🏦</div>
+    <h4>Check Payment Status</h4>
+    <p style="color: var(--muted); margin-bottom: 20px; font-size: 13px; line-height: 1.5;">
+      If you saw a "UPI Risk Policy" error, it's a bank security measure. Your money has <strong>not</strong> been deducted. This often happens for new payees or self-transfers.
+    </p>
     
     <div style="display: flex; flex-direction: column; gap: 10px;">
       <button class="btn" onclick="confirmPaymentSuccess()" style="background: var(--success); color: white; width: 100%;">Yes, Successful</button>
-      <button class="btn" onclick="recordManualExpense()" style="background: var(--accent); color: white; width: 100%;">Failed, but Record Expense</button>
-      <button class="btn btn-secondary" onclick="confirmPaymentCancelled()" style="width: 100%;">Cancelled</button>
+      <button class="btn" onclick="retryPayment()" style="background: var(--warning); color: white; width: 100%;">Retry Payment</button>
+      <button class="btn" onclick="recordManualExpense()" style="background: var(--accent); color: white; width: 100%;">Record as Manual Expense</button>
+      <button class="btn btn-secondary" onclick="confirmPaymentCancelled()" style="width: 100%;">Cancel</button>
     </div>
   </div>
 </div>
@@ -236,6 +238,34 @@
     : '';
   const API_URL = `${API_BASE}/api`;
   const STORAGE_MODE_KEY = 'storageMode';
+
+  // --- Storage Manager ---
+  class StorageManager {
+    static getHeaders() {
+      const token = localStorage.getItem('token');
+      return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+    }
+    static getMode() {
+      return localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    }
+    static getLocalExpenses() {
+      try {
+        return JSON.parse(localStorage.getItem('userExpenses') || '[]');
+      } catch {
+        return [];
+      }
+    }
+    static saveLocalExpenses(list) {
+      localStorage.setItem('userExpenses', JSON.stringify(list));
+    }
+    static saveExpenseLocally(expense) {
+        const list = this.getLocalExpenses();
+        const newExpense = { ...expense, _id: 'loc_' + Date.now(), id: 'loc_' + Date.now() };
+        list.push(newExpense);
+        this.saveLocalExpenses(list);
+        return newExpense;
+    }
+  }
 
   // Apply theme
   const theme = localStorage.getItem("appTheme") || "light";
@@ -278,6 +308,10 @@
       if (res.ok) {
         const data = await res.json();
         if (data.favorites) userFavorites = data.favorites;
+        if (data.recents) {
+          localStorage.setItem('recentUPIPayments', JSON.stringify(data.recents));
+          renderRecentPayments();
+        }
       }
     } catch (e) { console.error(e); }
   }
@@ -435,11 +469,11 @@
     if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
     if (!payee) { showToast('Enter payee name', 'error'); return; }
 
-    // 1. UPI Intent
+    // UPI Intent
     if (upiId && upiId.includes('@')) {
       const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Payment to ' + payee)}`;
       
-      const paymentData = { amount, payee, category: document.getElementById('payCategory').value, timestamp: Date.now(), upiId: upiId };
+      const paymentData = { amount, payee, category: document.getElementById('payCategory').value, timestamp: Date.now(), upiId: upiId, upiLink: upiLink };
       sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
 
       window.location.href = upiLink;
@@ -454,44 +488,9 @@
       return;
     }
 
-    // 2. Razorpay / Manual
-    try {
-      const token = localStorage.getItem('token');
-      const keyRes = await fetch(`${API_URL}/payment/key`, { headers: { 'Authorization': `Bearer ${token}` } });
-      
-      if (keyRes.ok) {
-        const { key } = await keyRes.json();
-        const orderRes = await fetch(`${API_URL}/payment/create-order`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ amount: amount })
-        });
-
-        if (orderRes.ok) {
-          const order = await orderRes.json();
-          const options = {
-            "key": key,
-            "amount": order.amount,
-            "currency": "INR",
-            "name": "FinFlow Payment",
-            "description": `Payment to ${payee}`,
-            "order_id": order.id,
-            "handler": function (response) { saveExpenseData(); },
-            "theme": { "color": "#10b981" }
-          };
-          const rzp1 = new Razorpay(options);
-          rzp1.open();
-          return;
-        }
-      }
-      
-      if (confirm("Payment Gateway not configured. Save as cash expense?")) {
-        saveExpenseData();
-      }
-    } catch (e) {
-      if (confirm("Network error. Save as cash expense?")) {
-        saveExpenseData();
-      }
+    // If no UPI ID, ask to save as manual expense.
+    if (confirm("No UPI ID provided. Do you want to save this as a manual cash expense?")) {
+      saveExpenseData();
     }
   }
 
@@ -518,6 +517,25 @@
     sessionStorage.removeItem('pendingPayment');
   }
 
+  function retryPayment() {
+    const raw = sessionStorage.getItem('pendingPayment');
+    const data = raw ? JSON.parse(raw) : null;
+    if (data && data.upiLink) {
+        document.getElementById('paymentConfirmModal').classList.remove('active');
+        overlay.classList.remove('active');
+        window.location.href = data.upiLink;
+        const handleReturn = () => {
+            if (document.visibilityState === 'visible') {
+                document.removeEventListener('visibilitychange', handleReturn);
+                checkPendingPayment();
+            }
+        };
+        document.addEventListener('visibilitychange', handleReturn);
+    } else {
+        showToast("Could not retry payment. Please try again manually.", "error");
+    }
+  }
+
   function recordManualExpense() {
     const raw = sessionStorage.getItem('pendingPayment');
     const data = raw ? JSON.parse(raw) : null;
@@ -534,7 +552,7 @@
     sessionStorage.removeItem('pendingPayment');
     document.getElementById('paymentConfirmModal').classList.remove('active');
     overlay.classList.remove('active');
-    showToast("Payment cancelled", "info");
+    showToast("Payment cancelled", "error");
   }
 
   async function saveExpenseData(data = null, customTitle = null) {
@@ -548,6 +566,15 @@
       upiId = document.getElementById('payUpiId').value;
     }
 
+    const expense = {
+      amount: Number(amount),
+      category: category,
+      note: `Paid to ${payee}`,
+      date: new Date().toISOString(),
+      currency: 'INR',
+      type: 'expense'
+    };
+
     closePayModal();
     const successOverlay = document.getElementById('paymentSuccessOverlay');
     if (customTitle) {
@@ -560,14 +587,6 @@
 
     try {
       const token = localStorage.getItem('token');
-      const expense = {
-        amount: Number(amount),
-        category: category,
-        note: `Paid to ${payee}`,
-        date: new Date().toISOString(),
-        currency: 'INR'
-      };
-
       const res = await fetch(`${API_URL}/expenses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -578,20 +597,36 @@
         setTimeout(() => {
           successOverlay.style.display = 'none';
           showToast('Payment recorded!', 'success');
-          renderRecentPayments();
         }, 2000);
-        if (upiId) addToRecentPayments(payee, upiId);
       } else { throw new Error('API Error'); }
     } catch (e) {
+      // Fallback to local storage on network error
+      StorageManager.saveExpenseLocally(expense);
       setTimeout(() => {
         successOverlay.style.display = 'none';
         showToast('Saved locally (Network error)', 'warning');
       }, 2000);
     }
+    if (upiId) addToRecentPayments(payee, upiId);
+    renderRecentPayments();
+  }
+
+  async function saveRecentPayments(recents) {
+    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
+    if (mode === 'local') return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_URL}/settings/recents`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ recents })
+      });
+    } catch(e) { console.error("Sync recents failed", e); }
   }
 
   // --- Recent Payments ---
-  function addToRecentPayments(name, vpa) {
+  async function addToRecentPayments(name, vpa) {
     if (!name || !vpa) return;
     let recents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
     recents = recents.filter(r => r.vpa !== vpa);
@@ -599,6 +634,7 @@
     if (recents.length > 10) recents.pop();
     localStorage.setItem('recentUPIPayments', JSON.stringify(recents));
     renderRecentPayments();
+    await saveRecentPayments(recents);
   }
 
   function renderRecentPayments() {
@@ -610,15 +646,34 @@
       return;
     }
 
-    list.innerHTML = recents.map(r => `
-      <div class="recent-item">
-        <div class="recent-info">
-          <div>${escapeHtml(r.name)}</div>
-          <div>${escapeHtml(r.vpa)}</div>
-        </div>
-        <button class="btn btn-secondary" style="width:auto; padding: 6px 12px; font-size: 12px;" onclick="payAgain('${r.vpa}', '${r.name.replace(/'/g, "\\'")}')">Pay</button>
-      </div>
-    `).join('');
+    list.innerHTML = ''; // Clear the list
+
+    recents.forEach(r => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'recent-item';
+
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'recent-info';
+      
+      const nameDiv = document.createElement('div');
+      nameDiv.textContent = r.name; // Use textContent to prevent XSS
+      
+      const vpaDiv = document.createElement('div');
+      vpaDiv.textContent = r.vpa; // Use textContent to prevent XSS
+
+      infoDiv.appendChild(nameDiv);
+      infoDiv.appendChild(vpaDiv);
+
+      const payBtn = document.createElement('button');
+      payBtn.className = 'btn btn-secondary';
+      payBtn.style.cssText = 'width:auto; padding: 6px 12px; font-size: 12px;';
+      payBtn.textContent = 'Pay';
+      payBtn.onclick = () => payAgain(r.vpa, r.name); // Safe event handler
+
+      itemDiv.appendChild(infoDiv);
+      itemDiv.appendChild(payBtn);
+      list.appendChild(itemDiv);
+    });
   }
 
   function payAgain(vpa, name) {

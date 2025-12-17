@@ -441,8 +441,8 @@
 
     .action-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
       margin-bottom: var(--spacing-lg);
     }
 
@@ -1164,12 +1164,11 @@
 <!-- Action Tabs -->
 <div class="action-tabs">
   <button class="action-tab active" onclick="navigateToAddExpense()">➕ <span data-i18n="addExpense">Add Expense</span></button>
-  <button class="action-tab" onclick="window.location.href='scan-pay.html'">📷 <span data-i18n="scanPay">Scan & Pay</span></button>
-
-  <button class="action-tab" onclick="openBillScanner()">📷 <span data-i18n="scanBill">Scan Bill</span></button>
-
+  <button class="action-tab" onclick="window.location.href='scan-pay.html'">📷 <span data-i18n="scanPay">Scan & Pay</span></button>  
+  <button class="action-tab" onclick="openBillScanner()">🧾 <span data-i18n="scanBill">Scan Bill</span></button>
   <button class="action-tab" onclick="switchTab(this, 'track')">📊 <span data-i18n="trackSpending">Track Spending</span></button>
   <button class="action-tab" onclick="switchTab(this, 'goals')">🎯 <span data-i18n="goals">Goals</span></button>
+  <button class="action-tab" onclick="navigateToPage('recurring.html')">🔄 <span data-i18n="recurring">Recurring</span></button>
 </div>
 
 
@@ -1354,6 +1353,16 @@
     document.body.setAttribute('data-theme', theme);
   }
   applyTheme();
+
+  function escapeHtml(text) {
+    if (!text) return text;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
   function showToast(message, type = 'success') {
     let toastEl = document.getElementById('toast');
@@ -1752,9 +1761,9 @@
       const rows = expenses.slice(0, 30).map(e => `
         <tr>
           <td>${new Date(e.date).toLocaleDateString('en-IN')}</td>
-          <td><span class="cat-pill">${e.category}</span></td>
-          <td>${e.note || '-'}</td>
-          <td class="amt">${symbol}${e.amount.toLocaleString()}</td>
+          <td><span class="cat-pill">${escapeHtml(e.category)}</span></td>
+          <td>${escapeHtml(e.note) || '-'}</td>
+          <td class="amt">${symbol}${(e.amount || 0).toLocaleString()}</td>
         </tr>
       `).join('');
 
@@ -1802,8 +1811,9 @@
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      const pdfDataUri = await html2pdf().set(opt).from(reportDiv).output('datauristring');
-      const pdfBase64 = pdfDataUri.split(',')[1]; // Strip data URI prefix to fix file format error
+      const worker = html2pdf().set(opt).from(reportDiv);
+      const pdfDataUri = await worker.output('datauristring');
+      const pdfBase64 = pdfDataUri.split(',')[1];
 
       // CSV Data
       let csvContent = "Date,Category,Amount,Note,Currency\n";
@@ -1834,21 +1844,29 @@
         ` + '<' + '/body>' + `
         ` + '<' + '/html>';
 
-      // 5. Send
-      const res = await fetch(`${API_BASE}/api/user/export-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ pdfData: pdfBase64, csvData: csvContent, htmlData: htmlContent })
-      });
-      const data = await res.json();
-      if (res.ok) {
+      // 5. Try to send email, fallback to download
+      try {
+        const res = await fetch(`${API_BASE}/api/user/export-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ pdfData: pdfBase64, csvData: csvContent, htmlData: htmlContent })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || `Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
         showToast(data.message, "success");
-      } else {
-        showToast('Failed: ' + (data.message || 'Unknown error'), "error");
+      } catch (emailError) {
+        console.error("Email sending failed, falling back to download:", emailError);
+        showToast('Email failed. Downloading report instead...', 'warning');
+        await worker.save(); // This will use the filename from `opt`
       }
     } catch (e) {
       console.error(e);
-      showToast('Error sending email', "error");
+      showToast('Error generating report', "error");
     }
   }
 

@@ -1033,9 +1033,9 @@
               ${expenses.slice(0, 100).map((e, i) => `
                 <tr>
                   <td>${new Date(e.date).toLocaleDateString()}</td>
-                  <td><span class="badge">${e.category}</span></td>
-                  <td>${e.note || '-'}</td>
-                  <td class="amount">${symbol}${e.amount.toLocaleString()}</td>
+                  <td><span class="badge">${escapeHtml(e.category)}</span></td>
+                  <td>${escapeHtml(e.note) || '-'}</td>
+                  <td class="amount">${symbol}${(e.amount || 0).toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1068,28 +1068,35 @@ ${reportDiv.innerHTML}
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      const pdfDataUri = await html2pdf().set(opt).from(reportDiv).outputPdf('datauristring');
+      const worker = html2pdf().set(opt).from(reportDiv);
+      const pdfDataUri = await worker.outputPdf('datauristring');
       const pdfBase64 = pdfDataUri.split(',')[1];
 
-      // 5. Send
-      const res = await fetch(`${API_URL}/user/export-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ 
-          pdfData: pdfBase64,
-          csvData: csvContent,
-          htmlData: htmlContent
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
+      // 5. Try to send email, fallback to download
+      try {
+        const res = await fetch(`${API_URL}/user/export-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ 
+            pdfData: pdfBase64,
+            csvData: csvContent,
+            htmlData: htmlContent
+          })
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || `Server error: ${res.status}`);
+        }
+        const data = await res.json();
         alert(data.message);
-      } else {
-        alert('Failed: ' + (data.message || 'Unknown error'));
+      } catch (emailError) {
+        console.error("Email sending failed, falling back to download:", emailError);
+        alert('Email failed. Downloading report instead...');
+        await worker.save();
       }
     } catch (e) {
       console.error(e);
-      alert('Error sending email');
+      alert('Error generating report');
     }
   }
 

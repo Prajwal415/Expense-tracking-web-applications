@@ -1314,7 +1314,7 @@
                   <td>${new Date(e.date).toLocaleDateString()}</td>
                   <td><span class="badge">${escapeHtml(e.category)}</span></td>
                   <td>${escapeHtml(e.note) || '-'}</td>
-                  <td class="amount">${symbol}${e.amount.toLocaleString()}</td>
+                  <td class="amount">${symbol}${(e.amount || 0).toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1335,23 +1335,32 @@
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      const pdfBase64 = await html2pdf().set(opt).from(reportDiv).output('datauristring');
+      const worker = html2pdf().set(opt).from(reportDiv);
+      const pdfBase64 = await worker.output('datauristring');
 
       // 4. Send to Backend
-      const res = await fetch(`${API_URL}/user/export-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ pdfData: pdfBase64 })
-      });
-      const data = await res.json();
-      if (res.ok) {
+      try {
+        const res = await fetch(`${API_URL}/user/export-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ pdfData: pdfBase64 })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || `Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
         showToast(data.message, "success");
-      } else {
-        showToast('Failed: ' + (data.message || 'Unknown error'), "error");
+      } catch (emailError) {
+        console.error("Email sending failed, falling back to download:", emailError);
+        showToast('Email failed. Downloading report instead...', 'warning');
+        await worker.save();
       }
     } catch (e) {
       console.error(e);
-      showToast('Error sending email', "error");
+      showToast('Error generating report', "error");
     } finally {
       btn.innerText = originalText;
       btn.disabled = false;

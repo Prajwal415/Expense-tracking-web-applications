@@ -384,6 +384,11 @@
 
   <!-- Input Card -->
   <div class="card" style="margin-top: 12px;">
+    <div class="type-toggle">
+      <button class="type-btn active" id="type-expense" onclick="setTransactionType('expense')">Expense</button>
+      <button class="type-btn" id="type-income" onclick="setTransactionType('income')">Income</button>
+    </div>
+
     <label data-i18n="amountLabel">Amount (₹)</label>
     <input id="amt" type="number" placeholder="0" inputmode="decimal" />
 
@@ -397,7 +402,7 @@
     <textarea id="note" placeholder="Add a note..."></textarea>
 
     <div class="row" style="margin-top: 16px;">
-      <button class="btn" onclick="saveExpense()" data-i18n="saveExpenseBtn">✓ Save Expense</button>
+      <button class="btn" id="saveBtn" onclick="saveTransaction()" data-i18n="saveExpenseBtn">✓ Save Expense</button>
       <button class="btn secondary" onclick="clearForm()" data-i18n="clearBtn">Clear</button>
     </div>
   </div>
@@ -489,12 +494,35 @@
   }
   applyTheme();
 
+  let transactionType = 'expense';
+
+  function setTransactionType(type) {
+    transactionType = type;
+    const expenseBtn = document.getElementById('type-expense');
+    const incomeBtn = document.getElementById('type-income');
+    const saveBtn = document.getElementById('saveBtn');
+    const catLabel = document.querySelector('label[for="cat"]');
+
+    if (type === 'income') {
+      expenseBtn.classList.remove('active');
+      incomeBtn.classList.add('active');
+      saveBtn.textContent = '✓ Save Income';
+      if(catLabel) catLabel.textContent = 'Income Source';
+    } else {
+      incomeBtn.classList.remove('active');
+      expenseBtn.classList.add('active');
+      saveBtn.textContent = '✓ Save Expense';
+      if(catLabel) catLabel.textContent = 'Category';
+    }
+  }
+
   // ============================================
   // STORAGE MANAGER - LocalStorage Operations
   // ============================================
   
   class StorageManager {
     static getHeaders() {
+      // This function is well-written
       const token = localStorage.getItem('token');
       return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
     }
@@ -511,7 +539,7 @@
       localStorage.setItem(EXPENSES_KEY, JSON.stringify(list));
     }
 
-    static async saveExpense(expense) {
+    static async saveTransaction(transaction) {
       if (this.getMode() === 'local') {
         const list = this.getLocalExpenses();
         const newExpense = { ...expense, _id: 'loc_' + Date.now(), id: 'loc_' + Date.now() };
@@ -527,7 +555,7 @@
         const res = await fetch(`${API_URL}/expenses`, {
           method: 'POST',
           headers: this.getHeaders(),
-          body: JSON.stringify(expense)
+          body: JSON.stringify(transaction)
         });
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         return await res.json();
@@ -659,7 +687,7 @@
       // Skip category save to prevent 404 errors if endpoint is missing
       // await StorageManager.saveCategory(category);
 
-      const expense = {
+      const transaction = {
         amount,
         category,
         note,
@@ -667,11 +695,11 @@
         title: category,
         date: new Date().toISOString(),
         currency,
-        type: 'expense'
+        type: transactionType // 'expense' or 'income'
       };
 
-      console.log('Expense object:', expense);
-      const saved = await StorageManager.saveExpense(expense);
+      console.log('Transaction object:', transaction);
+      const saved = await StorageManager.saveTransaction(transaction);
       console.log('Saved:', saved);
 
       clearForm();
