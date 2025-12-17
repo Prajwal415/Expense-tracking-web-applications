@@ -602,6 +602,16 @@
     Fitness: "💪", Insurance: "🛡️", Other: "📌"
   };
 
+  function escapeHtml(text) {
+    if (!text) return text;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   let globalSettings = {};
 
   function getCurrencySymbol() {
@@ -791,7 +801,7 @@
     const category = document.getElementById("goalCategory").value.trim();
     const amount = parseFloat(document.getElementById("goalAmount").value);
     const period = document.getElementById("goalPeriod").value;
-    const alertThreshold = parseInt(document.getElementById("goalAlert").value);
+    const alertThreshold = parseInt(document.getElementById("goalAlert").value) || 80;
 
     if (!category || !amount) {
       alert("Please fill all fields");
@@ -846,13 +856,13 @@
       else if (status === "warning") warning++;
       else exceeded++;
 
-      const progressClass = status === "danger" ? "danger" : status === "warning" ? "warning" : "";
+      const progressClass = status === "exceeded" ? "danger" : status === "warning" ? "warning" : "";
 
       return `
         <div class="goal-card">
           <div class="goal-header">
             <div class="goal-title">
-              ${getCategoryEmoji(goal.category)} ${goal.category}
+              ${getCategoryEmoji(goal.category)} ${escapeHtml(goal.category)}
             </div>
             <div class="goal-actions">
               <span class="goal-period">${goal.period.charAt(0).toUpperCase() + goal.period.slice(1)}</span>
@@ -913,10 +923,10 @@
       const symbol = getCurrencySymbol();
 
       if (spent > goal.amount) {
-        suggestions.push(`🚨 <strong>${goal.category}</strong> budget exceeded by ${symbol}${(spent - goal.amount).toLocaleString('en-IN')}`);
+        suggestions.push(`🚨 <strong>${escapeHtml(goal.category)}</strong> budget exceeded by ${symbol}${(spent - goal.amount).toLocaleString('en-IN')}`);
       } else if (percent > (goal.alert || 80)) {
         const daysLeft = Math.ceil((new Date(end) - new Date()) / (1000 * 60 * 60 * 24));
-        suggestions.push(`⚡ <strong>${goal.category}</strong>: ${symbol}${remaining.toLocaleString('en-IN')} left for ${daysLeft} days`);
+        suggestions.push(`⚡ <strong>${escapeHtml(goal.category)}</strong>: ${symbol}${remaining.toLocaleString('en-IN')} left for ${daysLeft} days`);
       }
     });
 
