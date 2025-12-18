@@ -31,4 +31,4 @@ Replace all localStorage usage with API calls to the backend MongoDB database.
 6. Remove unused localStorage keys (Done)
 
 ## Current Status
-Deployed. Switched SMTP to Port 2525 to bypass cloud network throttling on Port 587.
+Deployed. Email Service Verified (Port 2525). Idle timeouts in logs are normal for connection pooling.
