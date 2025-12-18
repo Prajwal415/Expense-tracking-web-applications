@@ -685,6 +685,7 @@ forgotForm.addEventListener('submit', async (ev) => {
     const data = await response.json();
 
     if (response.ok) {
+      console.log('Server response:', data);
       showMessage(forgotMsg, 'success', data.message);
     } else {
       console.error('Forgot Password Failed:', data);

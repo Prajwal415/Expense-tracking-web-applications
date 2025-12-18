@@ -36,7 +36,7 @@ try {
 const app = express();
 const PORT = process.env.PORT || 5003;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key_change_this';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://biradarprajwal492_db_user:HVZsogu62NrYF981@cluster0.bzs8ki1.mongodb.net/expense_tracker?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/expense-tracker';
 const DB_NAME = 'expense-tracker';
 
 const SUPPORTED_LANGUAGES = [
@@ -84,12 +84,12 @@ if (Razorpay && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) 
 // We use a standard configuration. If Gmail blocks Render, the logs will show it,
 // and the app will fallback to printing the link in the console.
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
   port: 587, // Force Port 587 (STARTTLS) - Most reliable for cloud
   secure: false, // Must be false for port 587
   auth: {
-    user: (process.env.EMAIL_USER || 'biradarprajwal999@gmail.com').trim(),
-    pass: (process.env.EMAIL_PASS || 'fducaynizgdgyxpy').trim(),
+    user: (process.env.EMAIL_USER || '9e3686001@smtp-brevo.com').trim(),
+    pass: (process.env.EMAIL_PASS || '').trim(),
   },
   tls: {
     rejectUnauthorized: false,
@@ -289,7 +289,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       const mailOptions = {
         to: user.email,
-        from: `FinFlow Security <${process.env.EMAIL_USER}>`,
+        from: `FinFlow Security <${process.env.EMAIL_SENDER || process.env.EMAIL_USER}>`,
         subject: 'Reset Your FinFlow Password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
@@ -685,7 +685,7 @@ app.post('/api/user/export-email', authenticateToken, async (req, res) => {
       try {
         const mailOptions = {
           to: user.email,
-          from: `Expense Tracker <${process.env.EMAIL_USER}>`,
+          from: `Expense Tracker <${process.env.EMAIL_SENDER || process.env.EMAIL_USER}>`,
           subject: 'Your Expense Tracker Report',
           html: htmlData || `Hello ${user.name},<br><br>Please find attached your comprehensive Expense Tracker report.<br><br>Best regards,<br>Expense Tracker Team`,
           attachments: []
