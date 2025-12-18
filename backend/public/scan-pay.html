@@ -165,8 +165,11 @@
   </header>
 
   <div class="card">
-    <button class="btn btn-primary" onclick="openQrScanner()" style="padding: 20px; font-size: 18px;">
-      <span>📷</span> Scan New QR Code
+    <button class="btn btn-primary" onclick="openQrScanner('pg')" style="padding: 20px; font-size: 18px;">
+      <span data-i18n="scanNewQr">📷 Scan New QR Code</span>
+    </button>
+    <button class="btn btn-secondary" onclick="openQrScanner('direct')" style="margin-top: 12px; padding: 16px; font-size: 16px; width: 100%; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);">
+      <span data-i18n="scanDirectUPI">📱 Scan & Pay (Direct App)</span>
     </button>
     
     <div style="margin-top: 15px; text-align: center; font-size: 13px; color: var(--muted);">
@@ -422,8 +425,10 @@
 
   // --- QR Scanner ---
   let html5QrcodeScanner = null;
+  let currentScanMode = 'pg'; // 'pg' (PhonePe Gateway) or 'direct' (UPI Intent)
 
-  function openQrScanner() {
+  function openQrScanner(mode = 'pg') {
+    currentScanMode = mode;
     overlay.classList.add('active');
     document.getElementById('qrScannerModal').classList.add('active');
     
@@ -524,6 +529,18 @@
 
     if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
     if (!payee) { showToast('Enter payee name', 'error'); return; }
+
+    // Handle Direct UPI App Mode
+    if (currentScanMode === 'direct' && upiId && upiId.includes('@')) {
+        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR`;
+        window.location.href = upiLink;
+        setTimeout(() => {
+            if (confirm("Did you complete the payment in the app?\n\nClick OK to save this expense.")) {
+                saveExpenseData({ amount, payee, category, upiId }, "Payment Recorded");
+            }
+        }, 1000);
+        return;
+    }
 
     // If no UPI ID, treat as manual expense.
     if (!upiId || !upiId.includes('@')) {

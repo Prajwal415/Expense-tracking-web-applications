@@ -3,16 +3,22 @@ const crypto = require('crypto');
 const axios = require('axios');
 const router = express.Router();
 
-// PhonePe Configuration (Sandbox Credentials)
-const MERCHANT_ID = "PGTESTPAYUAT".trim(); // Switched back to PGTESTPAYUAT
-const SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399".trim();
+// PhonePe Configuration
+// MODE 1: SANDBOX (Test Mode - Default)
+const MERCHANT_ID = "PGTESTPAYUAT";
+const SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
+const PHONEPE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+// MODE 2: PRODUCTION (Real Money - Required for App Redirection)
+// const MERCHANT_ID = "ATMOSTAP";
+// const SALT_KEY = "PASTE_YOUR_PRODUCTION_SALT_KEY_HERE";
+// const PHONEPE_HOST_URL = "https://api.phonepe.com/apis/hermes";
+
 const SALT_INDEX = 1;
-const PHONEPE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"; 
-// For Production use: https://api.phonepe.com/apis/hermes
 
 // Your frontend URL (where user returns after payment)
-const APP_BE_URL = "http://localhost:5003"; // Adjust port if needed
-const APP_FE_URL = "http://localhost:5003/scan-pay.html"; 
+const APP_BE_URL = process.env.BASE_URL || "http://localhost:5003";
+const APP_FE_URL = `${APP_BE_URL}/scan-pay.html`; 
 
 router.post('/initiate', async (req, res) => {
     try {
