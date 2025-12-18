@@ -475,74 +475,6 @@
   }
 
   // --- Payment Logic ---
-  async function handlePaymentAction() {
-    const amount = document.getElementById('payAmount').value;
-    const payee = document.getElementById('payTo').value;
-    const upiId = document.getElementById('payUpiId').value;
-
-    if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
-    if (!payee) { showToast('Enter payee name', 'error'); return; }
-
-    // UPI Intent
-    if (upiId && upiId.includes('@')) {      
-      try {
-        showToast("Initiating PhonePe payment...", "success");
-        const token = localStorage.getItem('token');
-        const orderId = 'TXN_' + Date.now();
-
-        // Store payment details to be used after redirect
-        const paymentData = { amount, payee, category: document.getElementById('payCategory').value, upiId, orderId };
-        sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
-
-        const res = await fetch(`${API_URL}/payment/initiate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ orderId: orderId, amount: amount })
-        });
-      
-        const data = await res.json();
-        if (data.success && data.url) {
-            window.location.href = data.url; 
-        } else {
-            throw new Error(data.message || "Payment initiation failed");
-        }
-      } catch (e) {
-        console.error(e);
-        showToast(e.message, "error");
-      }
-      return;
-    }
-
-    // If no UPI ID, ask to save as manual expense.
-    if (confirm("No UPI ID provided. Do you want to save this as a manual cash expense?")) {
-      saveExpenseData();
-    }
-  }
-
-  function checkPendingPayment() {
-    const raw = sessionStorage.getItem('pendingPayment');
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (Date.now() - data.timestamp > 600000) {
-        sessionStorage.removeItem('pendingPayment');
-        return;
-      }
-      closePayModal();
-      closeQrScanner();
-      overlay.classList.add('active');
-      document.getElementById('paymentConfirmModal').classList.add('active');
-    }
-  }
-
-  function confirmPaymentSuccess() {
-    const raw = sessionStorage.getItem('pendingPayment');
-    const data = raw ? JSON.parse(raw) : null;
-    document.getElementById('paymentConfirmModal').classList.remove('active');
-    saveExpenseData(data);
-    sessionStorage.removeItem('pendingPayment');
-  }
-  
-  // --- Payment Logic ---
 
   async function initiatePayment(paymentDetails) {
     try {
@@ -562,12 +494,20 @@
             returnUrl: window.location.href.split('?')[0] // Send current page URL
           })
       });
-    
-      const data = await res.json();
-      if (data.success && data.url) {
-          window.location.href = data.url; 
+
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+          const data = await res.json();
+          if (data.success && data.url) {
+              window.location.href = data.url; 
+          } else {
+              throw new Error(data.message || "Payment failed");
+          }
       } else {
-          throw new Error(data.message || "Payment initiation failed");
+          // If response is not JSON (likely HTML error page)
+          const text = await res.text();
+          console.error("Server Error (Non-JSON response):", text);
+          throw new Error("Server error: The payment endpoint was not found or returned an error. Check console for details.");
       }
     } catch (e) {
       console.error(e);
