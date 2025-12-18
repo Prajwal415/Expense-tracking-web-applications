@@ -8,10 +8,12 @@ const nodemailer = require('nodemailer');
     const envUser = process.env.EMAIL_USER;
     const envPass = process.env.EMAIL_PASS;
     const envHost = process.env.EMAIL_HOST;
+    const envPort = process.env.EMAIL_PORT;
     const envSender = process.env.EMAIL_SENDER || 'biradarprajwal999@gmail.com'; // Default to verified email
 
     console.log(`\n1. .env Configuration:`);
     console.log(`   Host: ${envHost}`);
+    console.log(`   Port: ${envPort || '2525 (Default)'}`);
     console.log(`   User: ${envUser}`);
     console.log(`   Sender: ${envSender}`);
     
@@ -38,7 +40,7 @@ const nodemailer = require('nodemailer');
 
     const transporter = nodemailer.createTransport({
         host: envHost || 'smtp-relay.brevo.com',
-        port: 587,
+        port: Number(envPort) || 2525,
         secure: false,
         auth: {
             user: envUser ? envUser.trim() : '',

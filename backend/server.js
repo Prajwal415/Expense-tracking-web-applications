@@ -85,7 +85,7 @@ if (Razorpay && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) 
 // and the app will fallback to printing the link in the console.
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
-  port: Number(process.env.EMAIL_PORT) || 587, // Allow env override (Try 2525 if 587 fails)
+  port: Number(process.env.EMAIL_PORT) || 2525, // Default to 2525 (Alternative to 587 to avoid timeouts)
   secure: false, // Must be false for port 587
   pool: true, // Use connection pooling for better stability
   maxConnections: 2, // Limit concurrent connections to avoid rate limits
