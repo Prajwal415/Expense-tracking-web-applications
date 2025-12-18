@@ -228,6 +228,17 @@
   </div>
 </div>
 
+<!-- Payment Confirmation Modal -->
+<div class="modal" id="paymentConfirmModal" style="text-align: center;">
+  <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+  <h4>Confirm Payment</h4>
+  <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">Did you complete the payment in the UPI app?</p>
+  <div class="modal-actions" style="flex-direction: column;">
+    <button class="btn btn-primary" onclick="confirmPaymentSuccess()">Yes, Payment Completed</button>
+    <button class="btn btn-secondary" onclick="closePaymentConfirmModal()">No, Cancel</button>
+  </div>
+</div>
+
 <!-- Payment Success Overlay -->
 <div id="paymentSuccessOverlay" style="position: fixed; inset: 0; background: #10b981; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; animation: fadeIn 0.3s ease-out;">
   <div style="background: white; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
@@ -533,12 +544,14 @@
     // Handle Direct UPI App Mode
     if (currentScanMode === 'direct' && upiId && upiId.includes('@')) {
         const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR`;
+        
+        window.pendingDirectPayment = { amount, payee, category, upiId };
+        closePayModal(); // Close input modal so confirmation can show cleanly
+        
         window.location.href = upiLink;
         setTimeout(() => {
-            if (confirm("Did you complete the payment in the app?\n\nClick OK to save this expense.")) {
-                saveExpenseData({ amount, payee, category, upiId }, "Payment Recorded");
-            }
-        }, 1000);
+            openPaymentConfirmModal();
+        }, 1500);
         return;
     }
 
@@ -763,6 +776,25 @@
     renderRecentPayments();
     handlePaymentRedirect();
   });
+
+  // --- Payment Confirmation Modal Logic ---
+  function openPaymentConfirmModal() {
+    overlay.classList.add('active');
+    document.getElementById('paymentConfirmModal').classList.add('active');
+  }
+
+  function closePaymentConfirmModal() {
+    overlay.classList.remove('active');
+    document.getElementById('paymentConfirmModal').classList.remove('active');
+    window.pendingDirectPayment = null;
+  }
+
+  function confirmPaymentSuccess() {
+    if (window.pendingDirectPayment) {
+      document.getElementById('paymentConfirmModal').classList.remove('active');
+      saveExpenseData(window.pendingDirectPayment, "Payment Recorded");
+    }
+  }
 
   function handlePaymentRedirect() {
     const urlParams = new URLSearchParams(window.location.search);
