@@ -87,6 +87,8 @@ const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
   port: 587, // Force Port 587 (STARTTLS) - Most reliable for cloud
   secure: false, // Must be false for port 587
+  pool: true, // Use connection pooling for better stability
+  maxConnections: 2, // Limit concurrent connections to avoid rate limits
   auth: {
     user: (process.env.EMAIL_USER || '9e3686001@smtp-brevo.com').trim(),
     pass: (process.env.EMAIL_PASS || '').trim(),
@@ -282,15 +284,19 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     // Log link for development/testing (in case email fails)
     console.log('\n==================================================');
+    console.log(`👤 User Found: ${user.email} (ID: ${user._id})`);
     console.log('🔑 PASSWORD RESET LINK (Dev/Testing):');
     console.log(resetURL);
     console.log('==================================================\n');
 
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const senderEmail = process.env.EMAIL_SENDER || process.env.EMAIL_USER;
       const mailOptions = {
         to: user.email,
-        from: `FinFlow Security <${process.env.EMAIL_SENDER || process.env.EMAIL_USER}>`,
-        subject: 'Reset Your FinFlow Password',
+        from: `Expense Tracker <${senderEmail}>`,
+        replyTo: senderEmail,
+        subject: 'Reset Your Expense Tracker Password',
+        text: `Hello ${user.name},\n\nYou requested a password reset. Please use the following link to reset your password:\n\n${resetURL}\n\nIf you did not request this, please ignore this email.`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #3f67e6; text-align: center;">Password Reset Request</h2>
@@ -306,6 +312,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         `
       };
       try {
+        console.log(`📧 Sending email via ${process.env.EMAIL_HOST || 'Brevo'}...`);
         await transporter.sendMail(mailOptions);
         console.log(`✅ Password reset email sent to ${user.email}`);
       } catch (emailErr) {
@@ -313,7 +320,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         console.log('💡 Use the link printed above to reset password manually.');
       }
     } else {
-      console.warn('⚠️  Skipping email send because EMAIL_USER/EMAIL_PASS are missing in .env');
+      console.warn('⚠️  Skipping email send because credentials are missing in environment variables.');
+      console.warn(`   EMAIL_USER present: ${!!process.env.EMAIL_USER}`);
+      console.warn(`   EMAIL_PASS present: ${!!process.env.EMAIL_PASS}`);
     }
 
     res.json({ message: 'If a user with that email exists, a reset link has been sent.' });
@@ -683,10 +692,13 @@ app.post('/api/user/export-email', authenticateToken, async (req, res) => {
     // Attempt to send email if configured and user has email
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS && user.email) {
       try {
+        const senderEmail = process.env.EMAIL_SENDER || process.env.EMAIL_USER;
         const mailOptions = {
           to: user.email,
-          from: `Expense Tracker <${process.env.EMAIL_SENDER || process.env.EMAIL_USER}>`,
+          from: `Expense Tracker <${senderEmail}>`,
+          replyTo: senderEmail,
           subject: 'Your Expense Tracker Report',
+          text: `Hello ${user.name},\n\nPlease find attached your comprehensive Expense Tracker report.\n\nBest regards,\nExpense Tracker Team`,
           html: htmlData || `Hello ${user.name},<br><br>Please find attached your comprehensive Expense Tracker report.<br><br>Best regards,<br>Expense Tracker Team`,
           attachments: []
         };
