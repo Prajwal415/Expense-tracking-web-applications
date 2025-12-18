@@ -1112,11 +1112,6 @@
               <span class="menu-item-icon">⚡</span>
               <span data-i18n="preferencesTitle">Preferences</span>
             </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item" onclick="toggleStorageMode()">
-              <span class="menu-item-icon" id="storageModeIcon">☁️</span>
-              <span id="storageModeText" data-i18n="storageMode">Storage: Cloud</span>
-            </div>
 
             <div class="menu-item" onclick="openSalaryEditor()">
               <span class="menu-item-icon">💵</span>
@@ -1345,7 +1340,6 @@
     ? `http://${window.location.hostname}:5003` 
     : '';
   const API_URL = `${API_BASE}/api`;
-  const STORAGE_MODE_KEY = 'storageMode';
   
   // Apply theme from localStorage
   function applyTheme() {
@@ -1434,18 +1428,6 @@
 
   // Fetch user profile data including salary and planData
   async function fetchUserData() {
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    
-    if (mode === 'local') {
-      // Load from local storage
-      window.userSalary = Number(localStorage.getItem('local_salary')) || 0;
-      const localPlan = localStorage.getItem('local_planData');
-      if (localPlan) {
-        window.userPlanData = JSON.parse(localPlan);
-      }
-      updateUIFromBackend();
-      return;
-    }
 
     try {
       const token = localStorage.getItem('token');
@@ -1489,27 +1471,6 @@
       document.getElementById('essPctDisplay').innerText = planData.essentialPercent;
     }
     recalcBreakdownFromUI();
-  }
-
-  /* ============================================
-     STORAGE MODE TOGGLE
-     ============================================ */
-  function initStorageToggle() {
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    const icon = document.getElementById('storageModeIcon');
-    const text = document.getElementById('storageModeText');
-    if (icon && text) {
-      icon.innerText = mode === 'local' ? '📱' : '☁️';
-      text.innerText = mode === 'local' ? 'Storage: Local' : 'Storage: Cloud';
-    }
-  }
-
-  function toggleStorageMode() {
-    const current = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    const next = current === 'mongodb' ? 'local' : 'mongodb';
-    localStorage.setItem(STORAGE_MODE_KEY, next);
-    showToast(`Switched to ${next === 'mongodb' ? 'Cloud' : 'Local'} storage`);
-    window.location.reload();
   }
 
   async function emailAllData() {
@@ -1899,9 +1860,6 @@
     }
   });
 
-  // Initialize storage toggle UI
-  initStorageToggle();
-
 
   /* ============================================
      NAVIGATION HELPER
@@ -2013,15 +1971,6 @@
       salary = salary + hikeAmount;
     }
 
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    if (mode === 'local') {
-      localStorage.setItem('local_salary', Math.round(salary));
-      window.userSalary = Math.round(salary);
-      recalcBreakdownFromUI();
-      closeSalaryEditor();
-      showToast('✅ Salary updated locally!');
-      return;
-    }
 
     try {
       const token = localStorage.getItem('token');
@@ -2075,14 +2024,6 @@
       appliedAt: new Date().toISOString()
     };
 
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    if (mode === 'local') {
-      localStorage.setItem('local_planData', JSON.stringify(planData));
-      window.userPlanData = planData;
-      updateUIFromBackend(); // Re-use UI update logic
-      showToast('✅ Plan applied locally!');
-      return;
-    }
 
     try {
       const token = localStorage.getItem('token');
@@ -2176,14 +2117,6 @@
       appliedAt: new Date().toISOString()
     };
 
-    const mode = localStorage.getItem(STORAGE_MODE_KEY) || 'mongodb';
-    if (mode === 'local') {
-      localStorage.setItem('local_planData', JSON.stringify(planData));
-      window.userPlanData = planData;
-      recalcBreakdownFromUI();
-      showToast('✅ Custom plan applied locally!');
-      return;
-    }
 
     try {
       const token = localStorage.getItem('token');
