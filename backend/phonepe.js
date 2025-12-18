@@ -4,8 +4,8 @@ const axios = require('axios');
 const router = express.Router();
 
 // PhonePe Configuration (Sandbox Credentials)
-const MERCHANT_ID = "PGTESTPAYUAT";
-const SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
+const MERCHANT_ID = "PGTESTPAYUAT".trim(); // Switched back to PGTESTPAYUAT
+const SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399".trim();
 const SALT_INDEX = 1;
 const PHONEPE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"; 
 // For Production use: https://api.phonepe.com/apis/hermes
@@ -19,10 +19,10 @@ router.post('/initiate', async (req, res) => {
         const { amount, orderId, mobileNumber, returnUrl } = req.body;
         
         // PhonePe expects amount in paise (multiply by 100)
-        const amountInPaise = Math.round(amount * 100);
-        const merchantTransactionId = orderId || `TXN_${Date.now()}`;
+        const amountInPaise = Math.round(Number(amount) * 100);
+        const merchantTransactionId = (orderId || `TXN_${Date.now()}`).substring(0, 34); // Ensure length limit
         const finalReturnUrl = returnUrl || APP_FE_URL;
-        const merchantUserId = "MUSER_" + Date.now();
+        const merchantUserId = "MUSER" + Date.now(); // Alphanumeric only preferred
 
         const payload = {
             merchantId: MERCHANT_ID,
@@ -42,6 +42,9 @@ router.post('/initiate', async (req, res) => {
         const stringToSign = base64Payload + "/pg/v1/pay" + SALT_KEY;
         const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
         const checksum = sha256 + "###" + SALT_INDEX;
+
+        // Debug Log (Optional: Remove in production)
+        console.log(`Initiating Payment: MID=${MERCHANT_ID}, TXN=${merchantTransactionId}, Amt=${amountInPaise}`);
 
         const options = {
             method: 'post',
@@ -65,13 +68,25 @@ router.post('/initiate', async (req, res) => {
         }
 
     } catch (error) {
-        const errorData = error.response ? error.response.data : error.message;
-        console.error("Payment Error:", JSON.stringify(errorData, null, 2));
+        console.error("PhonePe API Error Details:");
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.error("Data:", JSON.stringify(error.response.data, null, 2));
+            console.error("Status:", error.response.status);
+            console.error("Headers:", JSON.stringify(error.response.headers, null, 2));
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error("Request:", error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.error('Error Message:', error.message);
+        }
         
         // Send the specific error message from PhonePe to the frontend
         const msg = (error.response && error.response.data && error.response.data.message) 
             ? error.response.data.message 
-            : "Payment initiation failed";
+            : "Payment initiation failed. Check server logs.";
             
         res.status(500).json({ success: false, message: msg });
     }
