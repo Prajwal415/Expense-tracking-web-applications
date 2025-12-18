@@ -119,6 +119,29 @@
     .recent-info div:first-child { font-weight: 600; font-size: 14px; }
     .recent-info div:last-child { font-size: 11px; color: var(--muted); }
 
+    /* Recurring Payments Section */
+    .recurring-list { display: grid; gap: 12px; }
+    .recurring-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--accent-soft);
+      border: 1px solid var(--border);
+      padding: 15px;
+      border-radius: 12px;
+    }
+    .rec-info h3 { margin: 0 0 4px 0; font-size: 16px; }
+    .rec-meta { font-size: 12px; color: var(--muted); }
+    .rec-amount { font-weight: 700; color: var(--accent); font-size: 16px; }
+    .btn-pay {
+      background: var(--accent); color: white; border: none; padding: 8px 16px;
+      border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; margin-left: 10px;
+    }
+    .btn-pay:hover { opacity: 0.9; }
+    .section-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text);
+    }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
@@ -199,24 +222,6 @@
   <p style="text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px;">Point your camera at a UPI QR code</p>
   <div class="modal-actions">
     <button class="btn btn-secondary" onclick="closeQrScanner()">Close</button>
-  </div>
-</div>
-
-<!-- Payment Confirmation Modal -->
-<div class="modal" id="paymentConfirmModal" style="z-index: 2001;">
-  <div style="text-align: center;">
-    <div style="font-size: 40px; margin-bottom: 10px;">🏦</div>
-    <h4>Check Payment Status</h4>
-    <p style="color: var(--muted); margin-bottom: 20px; font-size: 13px; line-height: 1.5;">
-      If you saw a "UPI Risk Policy" error, it's a bank security measure. Your money has <strong>not</strong> been deducted. This often happens for new payees or self-transfers.
-    </p>
-    
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <button class="btn" onclick="confirmPaymentSuccess()" style="background: var(--success); color: white; width: 100%;">Yes, Successful</button>
-      <button class="btn" onclick="retryPayment()" style="background: var(--warning); color: white; width: 100%;">Retry Payment</button>
-      <button class="btn" onclick="recordManualExpense()" style="background: var(--accent); color: white; width: 100%;">Record as Manual Expense</button>
-      <button class="btn btn-secondary" onclick="confirmPaymentCancelled()" style="width: 100%;">Cancel</button>
-    </div>
   </div>
 </div>
 
@@ -479,21 +484,32 @@
     if (!payee) { showToast('Enter payee name', 'error'); return; }
 
     // UPI Intent
-    if (upiId && upiId.includes('@')) {
-      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Payment to ' + payee)}`;
-      
-      const paymentData = { amount, payee, category: document.getElementById('payCategory').value, timestamp: Date.now(), upiId: upiId, upiLink: upiLink };
-      sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
+    if (upiId && upiId.includes('@')) {      
+      try {
+        showToast("Initiating PhonePe payment...", "success");
+        const token = localStorage.getItem('token');
+        const orderId = 'TXN_' + Date.now();
 
-      window.location.href = upiLink;
+        // Store payment details to be used after redirect
+        const paymentData = { amount, payee, category: document.getElementById('payCategory').value, upiId, orderId };
+        sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
+
+        const res = await fetch(`${API_URL}/payment/initiate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ orderId: orderId, amount: amount })
+        });
       
-      const handleReturn = () => {
-        if (document.visibilityState === 'visible') {
-          document.removeEventListener('visibilitychange', handleReturn);
-          checkPendingPayment();
+        const data = await res.json();
+        if (data.success && data.url) {
+            window.location.href = data.url; 
+        } else {
+            throw new Error(data.message || "Payment initiation failed");
         }
-      };
-      document.addEventListener('visibilitychange', handleReturn);
+      } catch (e) {
+        console.error(e);
+        showToast(e.message, "error");
+      }
       return;
     }
 
@@ -525,54 +541,89 @@
     saveExpenseData(data);
     sessionStorage.removeItem('pendingPayment');
   }
+  
+  // --- Payment Logic ---
 
-  function retryPayment() {
-    const raw = sessionStorage.getItem('pendingPayment');
-    const data = raw ? JSON.parse(raw) : null;
-    if (data && data.upiLink) {
-        document.getElementById('paymentConfirmModal').classList.remove('active');
-        overlay.classList.remove('active');
-        window.location.href = data.upiLink;
-        const handleReturn = () => {
-            if (document.visibilityState === 'visible') {
-                document.removeEventListener('visibilitychange', handleReturn);
-                checkPendingPayment();
-            }
-        };
-        document.addEventListener('visibilitychange', handleReturn);
-    } else {
-        showToast("Could not retry payment. Please try again manually.", "error");
-    }
-  }
+  async function initiatePayment(paymentDetails) {
+    try {
+      showToast("Initiating PhonePe payment...", "success");
+      const token = localStorage.getItem('token');
+      const orderId = paymentDetails.orderId || 'TXN_' + Date.now();
 
-  function recordManualExpense() {
-    const raw = sessionStorage.getItem('pendingPayment');
-    const data = raw ? JSON.parse(raw) : null;
-    sessionStorage.removeItem('pendingPayment');
-    document.getElementById('paymentConfirmModal').classList.remove('active');
-    overlay.classList.remove('active');
+      // Store payment details to be used after redirect
+      sessionStorage.setItem('pendingPayment', JSON.stringify(paymentDetails));
+
+      const res = await fetch(`${API_URL}/payment/initiate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ 
+            orderId: orderId, 
+            amount: paymentDetails.amount,
+            returnUrl: window.location.href.split('?')[0] // Send current page URL
+          })
+      });
     
-    if (data) {
-      saveExpenseData(data, "Expense Recorded");
+      const data = await res.json();
+      if (data.success && data.url) {
+          window.location.href = data.url; 
+      } else {
+          throw new Error(data.message || "Payment initiation failed");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast(e.message, "error");
+      sessionStorage.removeItem('pendingPayment');
     }
   }
 
-  function confirmPaymentCancelled() {
-    sessionStorage.removeItem('pendingPayment');
-    document.getElementById('paymentConfirmModal').classList.remove('active');
-    overlay.classList.remove('active');
-    showToast("Payment cancelled", "error");
+  function handlePaymentAction() {
+    const amount = document.getElementById('payAmount').value;
+    const payee = document.getElementById('payTo').value;
+    const upiId = document.getElementById('payUpiId').value;
+    const category = document.getElementById('payCategory').value;
+
+    if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
+    if (!payee) { showToast('Enter payee name', 'error'); return; }
+
+    // If no UPI ID, treat as manual expense.
+    if (!upiId || !upiId.includes('@')) {
+        if (confirm("No valid UPI ID provided. Do you want to save this as a manual cash expense?")) {
+            saveExpenseData({ amount, payee, category });
+        }
+        return;
+    }
+
+    // Initiate PhonePe payment via backend
+    initiatePayment({ amount, payee, category, upiId });
+  }
+
+  function payRecurring(id, amount, name) {
+    initiatePayment({
+      orderId: id,
+      amount: amount,
+      payee: name,
+      category: 'Recurring'
+    });
   }
 
   async function saveExpenseData(data = null, customTitle = null) {
     let amount, payee, category, upiId;
+
     if (data) {
-      amount = data.amount; payee = data.payee; category = data.category; upiId = data.upiId;
+      amount = data.amount;
+      payee = data.payee;
+      category = data.category;
+      upiId = data.upiId;
     } else {
       amount = document.getElementById('payAmount').value;
       payee = document.getElementById('payTo').value;
       category = document.getElementById('payCategory').value;
       upiId = document.getElementById('payUpiId').value;
+    }
+
+    if (!amount || !payee || !category) {
+      showToast("Missing data to save expense.", "error");
+      return;
     }
 
     const expense = {
@@ -753,8 +804,28 @@
       renderUpiFavorites();
     });
     renderRecentPayments();
-    checkPendingPayment();
+    handlePaymentRedirect();
   });
+
+  function handlePaymentRedirect() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('status');
+    const txId = urlParams.get('txId');
+
+    if (paymentStatus) {
+      // Clear URL params to avoid re-triggering
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      if (paymentStatus === 'SUCCESS' || paymentStatus === 'PAYMENT_SUCCESS') {
+        const raw = sessionStorage.getItem('pendingPayment');
+        const data = raw ? JSON.parse(raw) : null;
+        saveExpenseData(data, "Payment Successful!");
+        sessionStorage.removeItem('pendingPayment');
+      } else {
+        showToast(`Payment ${paymentStatus.toLowerCase().replace('_', ' ')}. Please try again.`, 'error');
+      }
+    }
+  }
 </script>
 </body>
 </html>

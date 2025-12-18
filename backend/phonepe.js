@@ -1,0 +1,89 @@
+const express = require('express');
+const crypto = require('crypto');
+const axios = require('axios');
+const router = express.Router();
+
+// PhonePe Configuration (Sandbox Credentials)
+const MERCHANT_ID = "PGTESTPAYUAT"; 
+const SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
+const SALT_INDEX = 1;
+const PHONEPE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"; 
+// For Production use: https://api.phonepe.com/apis/hermes
+
+// Your frontend URL (where user returns after payment)
+const APP_BE_URL = "http://localhost:5003"; // Adjust port if needed
+const APP_FE_URL = "http://localhost:5003/scan-pay.html"; 
+
+router.post('/initiate', async (req, res) => {
+    try {
+        const { amount, orderId, mobileNumber, returnUrl } = req.body;
+        
+        // PhonePe expects amount in paise (multiply by 100)
+        const amountInPaise = Math.round(amount * 100);
+        const merchantTransactionId = orderId || `TXN_${Date.now()}`;
+        const finalReturnUrl = returnUrl || APP_FE_URL;
+        const merchantUserId = "MUSER_" + Date.now();
+
+        const payload = {
+            merchantId: MERCHANT_ID,
+            merchantTransactionId: merchantTransactionId,
+            merchantUserId: merchantUserId,
+            amount: amountInPaise,
+            redirectUrl: `${APP_BE_URL}/api/payment/callback?id=${merchantTransactionId}&returnTo=${encodeURIComponent(finalReturnUrl)}`,
+            redirectMode: "POST",
+            callbackUrl: `${APP_BE_URL}/api/payment/callback?id=${merchantTransactionId}&returnTo=${encodeURIComponent(finalReturnUrl)}`,
+            mobileNumber: mobileNumber || "9999999999",
+            paymentInstrument: {
+                type: "PAY_PAGE"
+            }
+        };
+
+        const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
+        const stringToSign = base64Payload + "/pg/v1/pay" + SALT_KEY;
+        const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
+        const checksum = sha256 + "###" + SALT_INDEX;
+
+        const options = {
+            method: 'post',
+            url: `${PHONEPE_HOST_URL}/pg/v1/pay`,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-VERIFY': checksum
+            },
+            data: {
+                request: base64Payload
+            }
+        };
+
+        const response = await axios(options);
+        
+        if (response.data.success) {
+            res.json({ success: true, url: response.data.data.instrumentResponse.redirectInfo.url });
+        } else {
+            res.status(400).json({ success: false, message: "Payment initiation failed" });
+        }
+
+    } catch (error) {
+        console.error("Payment Error:", error.response ? error.response.data : error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/callback', (req, res) => {
+    try {
+        const returnTo = req.query.returnTo || APP_FE_URL;
+        // In production, verify X-VERIFY header here
+        const base64Response = req.body.response;
+        const decodedResponse = JSON.parse(Buffer.from(base64Response, 'base64').toString('utf8'));
+        
+        const status = decodedResponse.code === 'PAYMENT_SUCCESS' ? 'SUCCESS' : 'FAILED';
+        const txId = decodedResponse.data.merchantTransactionId;
+
+        return res.redirect(`${returnTo}?status=${status}&txId=${txId}`);
+    } catch (error) {
+        const returnTo = req.query.returnTo || APP_FE_URL;
+        return res.redirect(`${returnTo}?status=ERROR`);
+    }
+});
+
+module.exports = router;
