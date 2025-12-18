@@ -25,6 +25,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const phonePeRoutes = require('./phonepe');
 let Razorpay = null;
 try {
   Razorpay = require('razorpay');
@@ -760,6 +761,9 @@ app.post('/api/user/export-email', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Error sending data email' });
   }
 });
+
+// --- PhonePe Routes ---
+app.use('/api/payment', phonePeRoutes);
 
 // --- Payment Routes (Razorpay) ---
 
