@@ -63,6 +63,9 @@ const BASE_URL = baseUrl;
 app.set('trust proxy', 1);
 
 console.log(`🌍 Base URL: ${BASE_URL}`);
+if (BASE_URL.includes('trackring')) {
+  console.warn('⚠️  WARNING: Typo detected in BASE_URL ("trackring"). Did you mean "tracking"? Please correct this in your Render Environment Variables.');
+}
 
 console.log('🔍 Environment Check:');
 console.log('   MONGO_URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Not Found (Using localhost default)');
@@ -312,6 +315,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       };
       try {
         console.log(`📧 Sending email via ${process.env.EMAIL_HOST || 'Brevo'}...`);
+        console.log(`   From: ${senderEmail}`);
         await transporter.sendMail(mailOptions);
         console.log(`✅ Password reset email sent to ${user.email}`);
       } catch (emailErr) {
@@ -729,6 +733,8 @@ app.post('/api/user/export-email', authenticateToken, async (req, res) => {
           });
         }
 
+        console.log(`📧 Sending email via ${process.env.EMAIL_HOST || 'Brevo'}...`);
+        console.log(`   From: ${senderEmail}`);
         await transporter.sendMail(mailOptions);
         console.log(`✅ Data export email sent to ${user.email}`);
         emailSent = true;

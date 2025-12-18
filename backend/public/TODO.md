@@ -31,4 +31,4 @@ Replace all localStorage usage with API calls to the backend MongoDB database.
 6. Remove unused localStorage keys (Done)
 
 ## Current Status
-Deployed. Email Service Verified (Port 2525). Idle timeouts in logs are normal for connection pooling.
+Deployed. Debugging Email Delivery. Added sender logging and BASE_URL typo check.
