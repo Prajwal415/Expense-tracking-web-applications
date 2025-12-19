@@ -609,7 +609,7 @@
           body: JSON.stringify({ 
             orderId: orderId, 
             amount: paymentDetails.amount,
-            returnUrl: window.location.href.split('?')[0] // Send current page URL
+            returnUrl: window.location.href.split('?')[0], // Send current page URL
             // The redirectUrl should not have query params, so we clean it.
             redirectUrl: window.location.href.split('?')[0] 
           })

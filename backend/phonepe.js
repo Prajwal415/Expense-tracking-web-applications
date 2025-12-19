@@ -74,26 +74,10 @@ router.post('/initiate', async (req, res) => {
         }
 
     } catch (error) {
-        console.error("PhonePe API Error Details:");
-        if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            console.error("Data:", JSON.stringify(error.response.data, null, 2));
-            console.error("Status:", error.response.status);
-            console.error("Headers:", JSON.stringify(error.response.headers, null, 2));
-        } else if (error.request) {
-            // The request was made but no response was received
-            console.error("Request:", error.request);
-        } else {
-            // Something happened in setting up the request that triggered an Error
-            console.error('Error Message:', error.message);
-        }
-        
-        // Send the specific error message from PhonePe to the frontend
+        console.error("PhonePe API Error Details:", error.message);
         const msg = (error.response && error.response.data && error.response.data.message) 
             ? error.response.data.message 
             : "Payment initiation failed. Check server logs.";
-            
         res.status(500).json({ success: false, message: msg });
     }
 });
@@ -101,13 +85,10 @@ router.post('/initiate', async (req, res) => {
 router.post('/callback', (req, res) => {
     try {
         const returnTo = req.query.returnTo || APP_FE_URL;
-        // In production, verify X-VERIFY header here
         const base64Response = req.body.response;
         const decodedResponse = JSON.parse(Buffer.from(base64Response, 'base64').toString('utf8'));
-        
         const status = decodedResponse.code === 'PAYMENT_SUCCESS' ? 'SUCCESS' : 'FAILED';
         const txId = decodedResponse.data.merchantTransactionId;
-
         return res.redirect(`${returnTo}?status=${status}&txId=${txId}`);
     } catch (error) {
         const returnTo = req.query.returnTo || APP_FE_URL;
