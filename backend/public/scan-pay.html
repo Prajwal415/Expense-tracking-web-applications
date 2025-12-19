@@ -229,6 +229,20 @@
       <option value="Other">Other</option>
     </select>
 
+    <!-- Advanced Merchant Params (Hidden by default) -->
+    <div style="margin-top: 12px;">
+      <button type="button" class="btn btn-ghost" onclick="toggleAdvancedParams()" style="padding: 8px; font-size: 12px; width: 100%; border: 1px dashed var(--border); color: var(--muted);">
+        🔧 Show Merchant Details (MC/TR)
+      </button>
+      <div id="advancedParams" style="display: none; margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border);">
+        <label for="payMc" style="font-size: 11px;">Merchant Code (mc)</label>
+        <input type="text" id="payMc" class="form-input" style="font-size: 13px; padding: 8px; margin-bottom: 8px;" placeholder="Optional">
+        
+        <label for="payTr" style="font-size: 11px;">Transaction Ref (tr)</label>
+        <input type="text" id="payTr" class="form-input" style="font-size: 13px; padding: 8px; margin-bottom: 0;" placeholder="Optional">
+      </div>
+    </div>
+
     <!-- App Selection Grid (Hidden by default) -->
     <div id="paymentAppsSection" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
       <label style="margin-bottom: 8px;">Select App to Pay</label>
@@ -466,12 +480,26 @@
   // --- Modals ---
   const overlay = document.getElementById('overlay');
   
-  function openPayModal() {
+  function toggleAdvancedParams() {
+    const div = document.getElementById('advancedParams');
+    const btn = document.querySelector('button[onclick="toggleAdvancedParams()"]');
+    if (div.style.display === 'none') {
+      div.style.display = 'block';
+      btn.innerText = '🔧 Hide Merchant Details';
+    } else {
+      div.style.display = 'none';
+      btn.innerText = '🔧 Show Merchant Details (MC/TR)';
+    }
+  }
+
+  function openPayModal(keepParams = false) {
     document.getElementById('payAmount').value = '';
     document.getElementById('payTo').value = '';
     document.getElementById('payUpiId').value = '';
     document.getElementById('payCategory').value = 'Food';
-    window.scannedUpiParams = {}; // Clear previous scan data
+    document.getElementById('payMc').value = '';
+    document.getElementById('payTr').value = '';
+    if (!keepParams) window.scannedUpiParams = {}; // Only clear if not coming from scan
     renderUpiFavorites();
     document.getElementById('paymentAppsSection').style.display = 'none';
     document.getElementById('payBtnAction').style.display = 'block';
@@ -541,10 +569,13 @@
         } catch(e) {}
       }
 
-      openPayModal();
+      openPayModal(true); // Pass true to keep scanned params
       document.getElementById('payUpiId').value = vpa;
       if (amount) document.getElementById('payAmount').value = amount;
       if (name) document.getElementById('payTo').value = decodeURIComponent(name);
+      // Populate advanced fields
+      if (window.scannedUpiParams.mc) document.getElementById('payMc').value = window.scannedUpiParams.mc;
+      if (window.scannedUpiParams.tr) document.getElementById('payTr').value = window.scannedUpiParams.tr;
       renderUpiFavorites();
       showToast("QR Scanned!", "success");
     } else {
@@ -616,10 +647,10 @@
   }
 
   function payWithApp(appName) {
-    const amount = document.getElementById('payAmount').value;
-    const payee = document.getElementById('payTo').value;
-    const upiId = document.getElementById('payUpiId').value;
-    const category = document.getElementById('payCategory').value;
+    const amount = document.getElementById('payAmount').value.trim();
+    const payee = document.getElementById('payTo').value.trim();
+    const upiId = document.getElementById('payUpiId').value.trim();
+    const category = document.getElementById('payCategory').value.trim();
     
     // Use scanned note if available, else default
     let note = `Payment to ${payee}`;
@@ -639,7 +670,7 @@
     let scheme = 'upi://pay';
     if (appName === 'gpay') scheme = 'tez://upi/pay'; // Specific scheme for GPay
     if (appName === 'phonepe') scheme = 'phonepe://pay'; // Specific scheme for PhonePe
-    if (appName === 'paytm') scheme = 'paytmmp://pay'; // Specific scheme for Paytm
+    if (appName === 'paytm') scheme = 'paytm://pay'; // Standard scheme for Paytm
 
     const formattedAmount = parseFloat(amount).toFixed(2);
     
@@ -653,14 +684,16 @@
     let link = `${scheme}?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}&mode=${mode}`;
 
     // Append Merchant Params if present (Crucial for success)
-    if (window.scannedUpiParams) {
-        if (window.scannedUpiParams.mc) link += `&mc=${encodeURIComponent(window.scannedUpiParams.mc)}`;
-        if (window.scannedUpiParams.tr) link += `&tr=${encodeURIComponent(window.scannedUpiParams.tr)}`;
-        if (window.scannedUpiParams.url) link += `&url=${encodeURIComponent(window.scannedUpiParams.url)}`;
-        if (window.scannedUpiParams.orgid) link += `&orgid=${window.scannedUpiParams.orgid}`;
-        if (window.scannedUpiParams.sign) link += `&sign=${encodeURIComponent(window.scannedUpiParams.sign)}`;
-        if (window.scannedUpiParams.aid) link += `&aid=${window.scannedUpiParams.aid}`;
-    }
+    // Read from inputs to allow user edits
+    const mc = document.getElementById('payMc').value.trim();
+    const tr = document.getElementById('payTr').value.trim();
+
+    if (mc) link += `&mc=${encodeURIComponent(mc)}`;
+    if (tr) link += `&tr=${encodeURIComponent(tr)}`;
+    if (window.scannedUpiParams && window.scannedUpiParams.url) link += `&url=${encodeURIComponent(window.scannedUpiParams.url)}`;
+        // REMOVED: orgid, sign, aid. 
+        // Passing the old signature ('sign') with a modified amount causes apps to reject the transaction 
+        // because the signature no longer matches the data.
 
     window.pendingDirectPayment = { amount, payee, category, upiId };
     window.paymentPending = Date.now(); // Timestamp to detect return duration
