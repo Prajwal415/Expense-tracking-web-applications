@@ -57,15 +57,19 @@ const SUPPORTED_LANGUAGES = [
 let baseUrl = process.env.BASE_URL || 'https://expense-tracking-web-applications.onrender.com';
 // Fix common URL formatting issues (missing slashes)
 if (baseUrl.startsWith('https:') && !baseUrl.includes('://')) baseUrl = baseUrl.replace('https:', 'https://');
+
+// Auto-correct known typo in configuration
+if (baseUrl.includes('trackring')) {
+  console.warn('⚠️  Auto-correcting BASE_URL typo: "trackring" -> "tracking"');
+  baseUrl = baseUrl.replace('trackring', 'tracking');
+}
+
 const BASE_URL = baseUrl;
 
 // Trust proxy for correct protocol detection on Render/Vercel
 app.set('trust proxy', 1);
 
 console.log(`🌍 Base URL: ${BASE_URL}`);
-if (BASE_URL.includes('trackring')) {
-  console.warn('⚠️  WARNING: Typo detected in BASE_URL ("trackring"). Did you mean "tracking"? Please correct this in your Render Environment Variables.');
-}
 
 console.log('🔍 Environment Check:');
 console.log('   MONGO_URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Not Found (Using localhost default)');
@@ -463,6 +467,7 @@ app.get('/api/settings', authenticateToken, async (req, res) => {
       categories: user.categories || [],
       preferences: user.preferences || {},
       favorites: user.favorites || { upi: [] },
+      recents: user.recents || [],
       supportedLanguages: SUPPORTED_LANGUAGES
     });
   } catch (e) {
@@ -525,6 +530,19 @@ app.put('/api/settings/favorites', authenticateToken, async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ message: 'Error updating favorites' });
+  }
+});
+
+app.put('/api/settings/recents', authenticateToken, async (req, res) => {
+  try {
+    const { recents } = req.body;
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(req.user.id) },
+      { $set: { recents } }
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Error updating recents' });
   }
 });
 
@@ -675,6 +693,92 @@ app.delete('/api/moments/:id', authenticateToken, async (req, res) => {
       _id: new ObjectId(req.params.id),
       userId: new ObjectId(req.user.id)
     });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Error deleting moment' });
+  }
+});
+
+// --- Admin Routes (For Data Management) ---
+
+app.get('/api/admin/users', authenticateToken, async (req, res) => {
+  try {
+    // Fetch all users with basic info
+    const users = await db.collection('users').find({}, {
+      projection: { name: 1, email: 1, createdAt: 1, salary: 1 }
+    }).sort({ createdAt: -1 }).toArray();
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ message: 'Error fetching users' });
+  }
+});
+
+app.get('/api/admin/user/:id/full-data', authenticateToken, async (req, res) => {
+  try {
+    const userId = new ObjectId(req.params.id);
+    const user = await db.collection('users').findOne({ _id: userId });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const expenses = await db.collection('expenses').find({ userId }).sort({ date: -1 }).toArray();
+    const goals = await db.collection('goals').find({ userId }).toArray();
+    const notifications = await db.collection('notifications').find({ userId }).sort({ createdAt: -1 }).toArray();
+    const moments = await db.collection('moments').find({ userId }).sort({ createdAt: -1 }).toArray();
+
+    res.json({
+      user,
+      expenses,
+      goals,
+      notifications,
+      moments
+    });
+  } catch (e) {
+    res.status(500).json({ message: 'Error fetching user details' });
+  }
+});
+
+app.put('/api/admin/user/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = new ObjectId(req.params.id);
+    const updates = { ...req.body };
+    delete updates._id; // Protect ID
+
+    // If password is provided, hash it
+    if (updates.password && updates.password.trim() !== '') {
+      updates.password = await bcrypt.hash(updates.password, 10);
+    } else {
+      delete updates.password; // Don't overwrite with empty if not provided
+    }
+
+    await db.collection('users').updateOne({ _id: userId }, { $set: updates });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Error updating user' });
+  }
+});
+
+app.delete('/api/admin/user/:id', authenticateToken, async (req, res) => {
+  try {
+    const userId = new ObjectId(req.params.id);
+    
+    // Delete all user data
+    await db.collection('expenses').deleteMany({ userId });
+    await db.collection('goals').deleteMany({ userId });
+    await db.collection('notifications').deleteMany({ userId });
+    await db.collection('moments').deleteMany({ userId });
+    
+    // Delete user
+    await db.collection('users').deleteOne({ _id: userId });
+    
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ message: 'Error deleting user' });
+  }
+});
+
+app.delete('/api/admin/moment/:id', authenticateToken, async (req, res) => {
+  try {
+    const momentId = new ObjectId(req.params.id);
+    await db.collection('moments').deleteOne({ _id: momentId });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ message: 'Error deleting moment' });

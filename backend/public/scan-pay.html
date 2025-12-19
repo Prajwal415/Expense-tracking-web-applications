@@ -153,6 +153,21 @@
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.success { background: #10b981; }
     .toast.error { background: #ef4444; }
+
+    /* Payment Apps Grid */
+    .pay-app-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; margin-bottom: 5px;
+    }
+    .pay-app-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 4px;
+      cursor: pointer; transition: all 0.2s; height: 100%;
+    }
+    .pay-app-btn:hover { background: var(--accent-soft); border-color: var(--accent); transform: translateY(-2px); }
+    .pay-app-icon {
+      width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .pay-app-name { font-size: 11px; font-weight: 600; color: var(--text); }
   </style>
 </head>
 <body>
@@ -165,12 +180,14 @@
   </header>
 
   <div class="card">
-    <button class="btn btn-primary" onclick="openQrScanner('pg')" style="padding: 20px; font-size: 18px;">
-      <span data-i18n="scanNewQr">📷 Scan New QR Code</span>
-    </button>
-    <button class="btn btn-secondary" onclick="openQrScanner('direct')" style="margin-top: 12px; padding: 16px; font-size: 16px; width: 100%; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);">
+    <button class="btn btn-secondary" onclick="openQrScanner('direct')" style="padding: 16px; font-size: 16px; width: 100%; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);">
       <span data-i18n="scanDirectUPI">📱 Scan & Pay (Direct App)</span>
     </button>
+
+    <button class="btn btn-secondary" onclick="document.getElementById('qrInputFile').click()" style="margin-top: 12px; padding: 12px; font-size: 14px; width: 100%; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);">
+      <span>🖼️ Import QR from Gallery</span>
+    </button>
+    <input type="file" id="qrInputFile" accept="image/*" style="display:none" onchange="handleFileScan(this)">
     
     <div style="margin-top: 15px; text-align: center; font-size: 13px; color: var(--muted);">
       or <a href="#" onclick="openPayModal(); return false;" style="color: var(--accent); text-decoration: none; font-weight: 600;">Enter UPI ID Manually</a>
@@ -211,6 +228,37 @@
       <option value="Entertainment">Entertainment</option>
       <option value="Other">Other</option>
     </select>
+
+    <!-- App Selection Grid (Hidden by default) -->
+    <div id="paymentAppsSection" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+      <label style="margin-bottom: 8px;">Select App to Pay</label>
+      <div class="pay-app-grid">
+        <button class="pay-app-btn" onclick="payWithApp('gpay')">
+          <div class="pay-app-icon" style="background:#fff; border:1px solid #eee;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6.19c4.51-4.18 7.09-11.15 7.09-17.84z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-3.11-.76-4.77s.27-3.32.76-4.55l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.9l7.97-6.31z"/><path fill="#EA4335" d="M24 48c6.48 0 11.95-2.13 15.89-5.81l-7.73-6.19c-2.14 1.44-4.9 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          </div>
+          <span class="pay-app-name">GPay</span>
+        </button>
+        <button class="pay-app-btn" onclick="payWithApp('phonepe')">
+          <div class="pay-app-icon" style="background:#5f259f; color:white;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          </div>
+          <span class="pay-app-name">PhonePe</span>
+        </button>
+        <button class="pay-app-btn" onclick="payWithApp('paytm')">
+          <div class="pay-app-icon" style="background:#00baf2; color:white;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+          </div>
+          <span class="pay-app-name">Paytm</span>
+        </button>
+        <button class="pay-app-btn" onclick="payWithApp('default')">
+          <div class="pay-app-icon" style="background:var(--accent); color:white;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </div>
+          <span class="pay-app-name">Other</span>
+        </button>
+      </div>
+    </div>
   </div>
   <div class="modal-actions">
     <button class="btn btn-primary" id="payBtnAction" onclick="handlePaymentAction()">Pay Now</button>
@@ -231,11 +279,11 @@
 <!-- Payment Confirmation Modal -->
 <div class="modal" id="paymentConfirmModal" style="text-align: center;">
   <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
-  <h4>Confirm Payment</h4>
-  <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">Did you complete the payment in the UPI app?</p>
-  <div class="modal-actions" style="flex-direction: column;">
-    <button class="btn btn-primary" onclick="confirmPaymentSuccess()">Yes, Payment Completed</button>
-    <button class="btn btn-secondary" onclick="closePaymentConfirmModal()">No, Cancel</button>
+  <h4>Payment Status</h4>
+  <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">You just returned from the payment app.</p>
+  <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+    <button class="btn btn-primary" onclick="confirmPaymentSuccess()">✅ Payment Successful</button>
+    <button class="btn btn-secondary" onclick="closePaymentConfirmModal()" style="background: rgba(239,68,68,0.1); color: var(--danger);">❌ Failed / Cancelled</button>
   </div>
 </div>
 
@@ -423,7 +471,10 @@
     document.getElementById('payTo').value = '';
     document.getElementById('payUpiId').value = '';
     document.getElementById('payCategory').value = 'Food';
+    window.scannedUpiParams = {}; // Clear previous scan data
     renderUpiFavorites();
+    document.getElementById('paymentAppsSection').style.display = 'none';
+    document.getElementById('payBtnAction').style.display = 'block';
     overlay.classList.add('active');
     document.getElementById('payModal').classList.add('active');
     setTimeout(() => document.getElementById('payAmount').focus(), 100);
@@ -437,6 +488,7 @@
   // --- QR Scanner ---
   let html5QrcodeScanner = null;
   let currentScanMode = 'pg'; // 'pg' (PhonePe Gateway) or 'direct' (UPI Intent)
+  window.scannedUpiParams = {}; // Store extra params from QR (mc, tr, etc.)
 
   function openQrScanner(mode = 'pg') {
     currentScanMode = mode;
@@ -469,6 +521,7 @@
       let vpa = decodedText;
       let name = '';
       let amount = '';
+      window.scannedUpiParams = {}; // Reset
       
       if (decodedText.startsWith('upi://')) {
         try {
@@ -476,6 +529,15 @@
           vpa = url.searchParams.get('pa') || '';
           name = url.searchParams.get('pn') || '';
           amount = url.searchParams.get('am') || '';
+          
+          // Capture merchant params (Crucial for P2M success)
+          if (url.searchParams.get('mc')) window.scannedUpiParams.mc = url.searchParams.get('mc');
+          if (url.searchParams.get('tr')) window.scannedUpiParams.tr = url.searchParams.get('tr');
+          if (url.searchParams.get('tn')) window.scannedUpiParams.tn = url.searchParams.get('tn');
+          if (url.searchParams.get('url')) window.scannedUpiParams.url = url.searchParams.get('url');
+          if (url.searchParams.get('orgid')) window.scannedUpiParams.orgid = url.searchParams.get('orgid');
+          if (url.searchParams.get('sign')) window.scannedUpiParams.sign = url.searchParams.get('sign');
+          if (url.searchParams.get('aid')) window.scannedUpiParams.aid = url.searchParams.get('aid');
         } catch(e) {}
       }
 
@@ -541,30 +603,70 @@
     if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
     if (!payee) { showToast('Enter payee name', 'error'); return; }
 
-    // Handle Direct UPI App Mode
+    // Handle Direct UPI App Mode (Default for Scan & Pay)
     if (currentScanMode === 'direct' && upiId && upiId.includes('@')) {
-        const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR`;
-        
-        window.pendingDirectPayment = { amount, payee, category, upiId };
-        closePayModal(); // Close input modal so confirmation can show cleanly
-        
-        window.location.href = upiLink;
-        setTimeout(() => {
-            openPaymentConfirmModal();
-        }, 1500);
+        // Show app selection instead of immediate redirect
+        document.getElementById('paymentAppsSection').style.display = 'block';
+        document.getElementById('payBtnAction').style.display = 'none';
         return;
     }
 
-    // If no UPI ID, treat as manual expense.
-    if (!upiId || !upiId.includes('@')) {
-        if (confirm("No valid UPI ID provided. Do you want to save this as a manual cash expense?")) {
-            saveExpenseData({ amount, payee, category });
-        }
-        return;
-    }
-
-    // Initiate PhonePe payment via backend
+    // Fallback for manual entry without specific mode
     initiatePayment({ amount, payee, category, upiId });
+  }
+
+  function payWithApp(appName) {
+    const amount = document.getElementById('payAmount').value;
+    const payee = document.getElementById('payTo').value;
+    const upiId = document.getElementById('payUpiId').value;
+    const category = document.getElementById('payCategory').value;
+    
+    // Use scanned note if available, else default
+    let note = `Payment to ${payee}`;
+    if (window.scannedUpiParams && window.scannedUpiParams.tn) {
+        note = window.scannedUpiParams.tn;
+    }
+    
+    // Check for mobile device (UPI links don't work on Desktop)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
+       showToast("UPI links require a mobile device with payment apps.", "warning");
+    }
+
+    if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
+
+    // Construct UPI Intent Link
+    let scheme = 'upi://pay';
+    if (appName === 'gpay') scheme = 'tez://upi/pay'; // Specific scheme for GPay
+    if (appName === 'phonepe') scheme = 'phonepe://pay'; // Specific scheme for PhonePe
+    if (appName === 'paytm') scheme = 'paytmmp://pay'; // Specific scheme for Paytm
+
+    const formattedAmount = parseFloat(amount).toFixed(2);
+    
+    // Determine mode: '01' for QR scan, '00' for manual entry
+    let mode = '00';
+    if (window.scannedUpiParams && Object.keys(window.scannedUpiParams).length > 0) {
+        mode = '01';
+    }
+
+    // Fallback to generic UPI if specific scheme fails is handled by OS/Browser usually
+    let link = `${scheme}?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}&mode=${mode}`;
+
+    // Append Merchant Params if present (Crucial for success)
+    if (window.scannedUpiParams) {
+        if (window.scannedUpiParams.mc) link += `&mc=${encodeURIComponent(window.scannedUpiParams.mc)}`;
+        if (window.scannedUpiParams.tr) link += `&tr=${encodeURIComponent(window.scannedUpiParams.tr)}`;
+        if (window.scannedUpiParams.url) link += `&url=${encodeURIComponent(window.scannedUpiParams.url)}`;
+        if (window.scannedUpiParams.orgid) link += `&orgid=${window.scannedUpiParams.orgid}`;
+        if (window.scannedUpiParams.sign) link += `&sign=${encodeURIComponent(window.scannedUpiParams.sign)}`;
+        if (window.scannedUpiParams.aid) link += `&aid=${window.scannedUpiParams.aid}`;
+    }
+
+    window.pendingDirectPayment = { amount, payee, category, upiId };
+    window.paymentPending = Date.now(); // Timestamp to detect return duration
+
+    closePayModal();
+    window.location.href = link;
   }
 
   function payRecurring(id, amount, name) {
@@ -814,6 +916,36 @@
         showToast(`Payment ${paymentStatus.toLowerCase().replace('_', ' ')}. Please try again.`, 'error');
       }
     }
+  }
+
+  // Auto-detect return from payment app
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible' && window.paymentPending) {
+      const timeSpent = Date.now() - window.paymentPending;
+      window.paymentPending = false;
+      // Only show confirmation if user was away for more than 2 seconds (implies app switch happened)
+      if (timeSpent > 2000) {
+        setTimeout(() => openPaymentConfirmModal(), 500);
+      }
+    }
+  });
+
+  async function handleFileScan(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    showToast("Scanning image...", "info");
+
+    try {
+        if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+        }
+        const decodedText = await html5QrcodeScanner.scanFile(file, true);
+        onScanSuccess(decodedText);
+    } catch (err) {
+        console.error("File scan error:", err);
+        showToast("No QR code found in image", "error");
+    }
+    input.value = '';
   }
 </script>
 </body>

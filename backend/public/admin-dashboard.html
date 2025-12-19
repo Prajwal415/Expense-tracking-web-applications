@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Dashboard — Expense Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --primary: #1e293b;
+      --secondary: #3f67e6;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #334155;
+      --text-light: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar (User List) */
+    .sidebar {
+      width: 300px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); background: var(--primary); color: white; }
+    .sidebar-header h2 { font-size: 18px; font-weight: 700; }
+    .user-list { flex: 1; overflow-y: auto; }
+    .user-item {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .user-item:hover { background: #f8fafc; }
+    .user-item.active { background: #eff6ff; border-left: 4px solid var(--secondary); }
+    .u-name { font-weight: 600; font-size: 14px; color: var(--primary); }
+    .u-email { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+    /* Main Content */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .main-header {
+      padding: 15px 25px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .main-header h1 { font-size: 20px; }
+    .actions button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .btn-edit { background: var(--secondary); color: white; }
+    .btn-save { background: #10b981; color: white; display: none; }
+    .btn-cancel { background: #ef4444; color: white; display: none; margin-right: 8px; }
+    .btn-delete { background: #dc2626; color: white; margin-right: 8px; }
+
+    /* Tabs */
+    .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 25px; }
+    .tab {
+      padding: 15px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-light);
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active { color: var(--secondary); border-bottom-color: var(--secondary); }
+
+    /* Content Area */
+    .content-area { flex: 1; overflow-y: auto; padding: 25px; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Forms & Data */
+    .data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 5px; }
+    .form-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: #f8fafc;
+    }
+    .form-input:disabled { color: #64748b; cursor: not-allowed; }
+    .form-input:not(:disabled) { background: white; border-color: var(--secondary); }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+    th { background: #f8fafc; font-weight: 600; color: var(--text-light); }
+    
+    .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
+    .json-dump { background: #1e293b; color: #a5b4fc; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Admin Dashboard</h2>
+      <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">MongoDB Data Inspector</div>
+      <input type="text" id="userSearch" placeholder="Search users..." onkeyup="filterUsers()" style="width: 100%; padding: 8px; margin-top: 12px; border-radius: 4px; border: none; font-size: 13px;">
+    </div>
+    <div class="user-list" id="userList">
+      <div style="padding: 20px; text-align: center; color: #94a3b8;">Loading users...</div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="main-header">
+      <h1 id="headerTitle">Select a User</h1>
+      <div class="actions" id="actionButtons" style="display:none;">
+        <button class="btn-delete" id="deleteBtn" onclick="deleteUser()">Delete User</button>
+        <button class="btn-cancel" id="cancelBtn" onclick="cancelEdit()">Cancel</button>
+        <button class="btn-save" id="saveBtn" onclick="saveUser()">Save Changes</button>
+        <button class="btn-edit" id="editBtn" onclick="enableEdit()">Alter User Data</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" onclick="switchTab('profile')">Profile & Login</div>
+      <div class="tab" onclick="switchTab('expenses')">Expenses</div>
+      <div class="tab" onclick="switchTab('goals')">Goals</div>
+      <div class="tab" onclick="switchTab('notifications')">Notifications</div>
+      <div class="tab" onclick="switchTab('moments')">Moments</div>
+      <div class="tab" onclick="switchTab('scanpay')">Scan & Pay</div>
+      <div class="tab" onclick="switchTab('raw')">Raw JSON</div>
+    </div>
+
+    <div class="content-area" id="contentArea">
+      
+      <!-- Profile Section -->
+      <div id="profile" class="section active">
+        <div class="data-grid">
+          <div class="form-group">
+            <label>User ID (MongoDB _id)</label>
+            <input type="text" id="p_id" class="form-input" disabled>
+          </div>
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="p_name" class="form-input" disabled>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="p_email" class="form-input" disabled>
+          </div>
+          <div class="form-group">
+            <label>Current Salary</label>
+            <input type="number" id="p_salary" class="form-input" disabled>
+          </div>
+          <div class="form-group">
+            <label>Account Created</label>
+            <input type="text" id="p_created" class="form-input" disabled>
+          </div>
+          <div class="form-group">
+            <label>Current Password (Visible)</label>
+            <input type="text" id="p_current_hash" class="form-input" disabled style="font-family: monospace; font-size: 11px; color: #64748b;">
+          </div>
+          <div class="form-group">
+            <label>Set New Password</label>
+            <input type="text" id="p_password" class="form-input" disabled placeholder="Leave empty to keep current">
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses Section -->
+      <div id="expenses" class="section">
+        <div id="expensesTable"></div>
+      </div>
+
+      <!-- Goals Section -->
+      <div id="goals" class="section">
+        <div id="goalsTable"></div>
+      </div>
+
+      <!-- Notifications Section -->
+      <div id="notifications" class="section">
+        <div id="notifTable"></div>
+      </div>
+
+      <!-- Moments Section -->
+      <div id="moments" class="section">
+        <div style="margin-bottom: 15px; display: flex; justify-content: flex-end;">
+          <button class="btn-edit" onclick="backupMoments()">💾 Backup Moments (JSON)</button>
+        </div>
+        <div id="momentsGrid" class="data-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));"></div>
+      </div>
+
+      <!-- Scan & Pay Section -->
+      <div id="scanpay" class="section">
+        <div id="scanPayTable"></div>
+      </div>
+
+      <!-- Raw JSON Section -->
+      <div id="raw" class="section">
+        <div class="json-dump" id="jsonDump">Select a user to view raw data.</div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const API_BASE = (window.location.port && window.location.port !== '5003')
+    ? `http://${window.location.hostname}:5003` 
+    : '';
+  const API_URL = `${API_BASE}/api`;
+
+  let currentUserData = null;
+  let isEditing = false;
+  let allUsers = [];
+
+  // Initialize
+  async function init() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please login first.");
+      window.location.href = 'index.html';
+      return;
+    }
+    await fetchUsers();
+  }
+
+  // Fetch User List
+  async function fetchUsers() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/admin/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const users = await res.json();
+      allUsers = users;
+      renderUserList(users);
+    } catch (e) {
+      document.getElementById('userList').innerHTML = `<div style="padding:20px; color:red;">Error: ${e.message}</div>`;
+    }
+  }
+
+  function filterUsers() {
+    const term = document.getElementById('userSearch').value.toLowerCase();
+    const filtered = allUsers.filter(u => 
+      (u.name && u.name.toLowerCase().includes(term)) || 
+      (u.email && u.email.toLowerCase().includes(term))
+    );
+    renderUserList(filtered);
+  }
+
+  function renderUserList(users) {
+    const list = document.getElementById('userList');
+    list.innerHTML = users.map(u => `
+      <div class="user-item" onclick="loadUser('${u._id}', this)">
+        <div class="u-name">${u.name || 'Unknown'}</div>
+        <div class="u-email">${u.email}</div>
+      </div>
+    `).join('');
+  }
+
+  // Load Full User Data
+  async function loadUser(id, el) {
+    // UI Update
+    document.querySelectorAll('.user-item').forEach(i => i.classList.remove('active'));
+    if(el) el.classList.add('active');
+    document.getElementById('headerTitle').innerText = "Loading...";
+    cancelEdit(); // Reset edit mode
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/admin/user/${id}/full-data`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to load user data');
+      
+      const data = await res.json();
+      currentUserData = data;
+      renderUserData(data);
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  function renderUserData(data) {
+    const u = data.user;
+    document.getElementById('headerTitle').innerText = u.name;
+    document.getElementById('actionButtons').style.display = 'block';
+
+    // Profile Inputs
+    document.getElementById('p_id').value = u._id;
+    document.getElementById('p_name').value = u.name;
+    document.getElementById('p_email').value = u.email;
+    document.getElementById('p_salary').value = u.salary;
+    document.getElementById('p_created').value = new Date(u.createdAt).toLocaleString();
+    document.getElementById('p_current_hash').value = u.password;
+    document.getElementById('p_password').value = ""; // Clear password field
+
+    // Expenses Table
+    const expHtml = data.expenses.length ? `
+      <table>
+        <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th></tr></thead>
+        <tbody>
+          ${data.expenses.map(e => `
+            <tr>
+              <td>${new Date(e.date).toLocaleDateString()}</td>
+              <td>${e.category}</td>
+              <td>₹${e.amount}</td>
+              <td>${e.note || '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<div class="empty-state">No expenses recorded.</div>';
+    document.getElementById('expensesTable').innerHTML = expHtml;
+
+    // Goals Table
+    const goalsHtml = data.goals.length ? `
+      <table>
+        <thead><tr><th>Category</th><th>Budget Limit</th><th>Period</th><th>Alert Threshold</th></tr></thead>
+        <tbody>
+          ${data.goals.map(g => `
+            <tr>
+              <td>${g.category}</td>
+              <td>₹${g.amount}</td>
+              <td>${g.period}</td>
+              <td>${g.alert}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<div class="empty-state">No goals set.</div>';
+    document.getElementById('goalsTable').innerHTML = goalsHtml;
+
+    // Notifications
+    const notifHtml = data.notifications.length ? `
+      <table>
+        <thead><tr><th>Date</th><th>Message</th><th>Read</th></tr></thead>
+        <tbody>
+          ${data.notifications.map(n => `
+            <tr>
+              <td>${new Date(n.createdAt).toLocaleDateString()}</td>
+              <td>${n.message}</td>
+              <td>${n.read ? 'Yes' : 'No'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<div class="empty-state">No notifications.</div>';
+    document.getElementById('notifTable').innerHTML = notifHtml;
+
+    // Moments Grid
+    const momentsHtml = data.moments.length ? 
+      data.moments.map(m => `
+        <div style="border:1px solid #e2e8f0; padding:5px; border-radius:8px; background:white; position:relative;">
+          <button onclick="deleteAdminMoment('${m._id}')" style="position:absolute; top:5px; right:5px; background:rgba(220,38,38,0.9); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; z-index:10;" title="Delete">×</button>
+          <img src="${m.dataUrl}" style="width:100%; height:120px; object-fit:cover; border-radius:4px; background:#000;">
+          <div style="font-size:10px; margin-top:5px; color:#64748b;">${new Date(m.createdAt).toLocaleString()}</div>
+        </div>
+      `).join('') 
+      : '<div class="empty-state" style="grid-column: 1/-1;">No moments captured.</div>';
+    document.getElementById('momentsGrid').innerHTML = momentsHtml;
+
+    // Scan & Pay Recents
+    const recents = data.user.recents || [];
+    const scanPayHtml = recents.length ? `
+      <table>
+        <thead><tr><th>Payee Name</th><th>UPI ID (VPA)</th><th>Last Paid</th></tr></thead>
+        <tbody>
+          ${recents.map(r => `
+            <tr>
+              <td>${r.name}</td>
+              <td>${r.vpa}</td>
+              <td>${new Date(r.lastPaid).toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<div class="empty-state">No recent UPI transactions found.</div>';
+    document.getElementById('scanPayTable').innerHTML = scanPayHtml;
+
+    // Raw JSON
+    document.getElementById('jsonDump').innerText = JSON.stringify(data, null, 2);
+  }
+
+  // Tab Switching
+  window.switchTab = function(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    
+    // Find the tab element that was clicked (approximate)
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const targetTab = tabs.find(t => t.innerText.toLowerCase().includes(tabName.substring(0,3)));
+    if(targetTab) targetTab.classList.add('active');
+
+    document.getElementById(tabName).classList.add('active');
+  }
+
+  // Edit Mode
+  window.enableEdit = function() {
+    isEditing = true;
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('saveBtn').style.display = 'inline-block';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('deleteBtn').style.display = 'none';
+
+    // Enable inputs
+    ['p_name', 'p_email', 'p_salary', 'p_password'].forEach(id => {
+      document.getElementById(id).disabled = false;
+    });
+    document.getElementById('p_name').focus();
+  }
+
+  window.cancelEdit = function() {
+    isEditing = false;
+    document.getElementById('editBtn').style.display = 'inline-block';
+    document.getElementById('saveBtn').style.display = 'none';
+    document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('deleteBtn').style.display = 'inline-block';
+
+    // Disable inputs
+    ['p_name', 'p_email', 'p_salary', 'p_password'].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
+
+    // Reset values if we have data
+    if (currentUserData) {
+      const u = currentUserData.user;
+      document.getElementById('p_name').value = u.name;
+      document.getElementById('p_email').value = u.email;
+      document.getElementById('p_salary').value = u.salary;
+      document.getElementById('p_password').value = "";
+    }
+  }
+
+  window.saveUser = async function() {
+    if (!currentUserData) return;
+    const id = currentUserData.user._id;
+    
+    const updates = {
+      name: document.getElementById('p_name').value,
+      email: document.getElementById('p_email').value,
+      salary: Number(document.getElementById('p_salary').value)
+    };
+
+    const newPass = document.getElementById('p_password').value;
+    if (newPass) {
+      updates.password = newPass;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/admin/user/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (res.ok) {
+        alert("User updated successfully!");
+        // Refresh data
+        loadUser(id);
+        fetchUsers(); // Refresh list in case name changed
+      } else {
+        throw new Error("Failed to update user");
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  window.deleteUser = async function() {
+    if (!currentUserData) return;
+    const u = currentUserData.user;
+    if (!confirm(`Are you sure you want to DELETE user "${u.name}"?\n\nThis will remove all their expenses, goals, and data permanently.`)) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/admin/user/${u._id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        alert("User deleted.");
+        window.location.reload();
+      } else {
+        throw new Error("Failed to delete user");
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  window.backupMoments = function() {
+    if (!currentUserData || !currentUserData.moments || currentUserData.moments.length === 0) {
+      alert("No moments to backup.");
+      return;
+    }
+    const exportData = {
+      userId: currentUserData.user._id,
+      userName: currentUserData.user.name,
+      exportedAt: new Date().toISOString(),
+      moments: currentUserData.moments
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `moments_backup_${currentUserData.user.name.replace(/\s+/g,'_')}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  }
+
+  window.deleteAdminMoment = async function(momentId) {
+    if(!confirm("Delete this moment permanently?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/admin/moment/${momentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if(res.ok) {
+        loadUser(currentUserData.user._id); // Refresh data
+      } else {
+        alert("Failed to delete moment");
+      }
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
