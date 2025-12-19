@@ -691,9 +691,6 @@
     if (mc) link += `&mc=${encodeURIComponent(mc)}`;
     if (tr) link += `&tr=${encodeURIComponent(tr)}`;
     if (window.scannedUpiParams && window.scannedUpiParams.url) link += `&url=${encodeURIComponent(window.scannedUpiParams.url)}`;
-        // REMOVED: orgid, sign, aid. 
-        // Passing the old signature ('sign') with a modified amount causes apps to reject the transaction 
-        // because the signature no longer matches the data.
 
     window.pendingDirectPayment = { amount, payee, category, upiId };
     window.paymentPending = Date.now(); // Timestamp to detect return duration
