@@ -316,6 +316,9 @@
   <p id="paymentSuccessMsg" style="font-size: 18px; opacity: 0.9;">₹0 paid</p>
 </div>
 
+<!-- Hidden div for file scanning -->
+<div id="file-qr-reader" style="display:none;"></div>
+
 <!-- Toast Notification -->
 <div id="toast" class="toast"></div>
 
@@ -596,9 +599,6 @@
       showToast("Initiating PhonePe payment...", "success");
       const token = localStorage.getItem('token');
       const orderId = paymentDetails.orderId || 'TXN_' + Date.now();
-
-      // Store payment details to be used after redirect
-      sessionStorage.setItem('pendingPayment', JSON.stringify(paymentDetails));
       // Store payment details AND orderId to be used after redirect
       const detailsToStore = { ...paymentDetails, orderId };
       sessionStorage.setItem('pendingPayment', JSON.stringify(detailsToStore));
@@ -622,7 +622,6 @@
               // Redirect user to PhonePe's payment page
               window.location.href = data.url; 
           } else {
-              throw new Error(data.message || "Payment failed");
               throw new Error(data.message || "Payment initiation failed");
           }
       } else {
@@ -675,6 +674,7 @@
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (!isMobile) {
        showToast("UPI links require a mobile device with payment apps.", "warning");
+       return;
     }
 
     if (!amount || amount <= 0) { showToast('Enter valid amount', 'error'); return; }
@@ -946,65 +946,54 @@
     }
   }
 
-  function handlePaymentRedirect() {
   async function handlePaymentRedirect() {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('status');
-    const txId = urlParams.get('txId');
-    const paymentStatusIndicator = urlParams.get('status'); // This is just an indicator, not trusted.
-
-    if (paymentStatus) {
-      // Clear URL params to avoid re-triggering
-      window.history.replaceState({}, document.title, window.location.pathname);
-    // We only proceed if there's a pending payment in session storage
     const rawPending = sessionStorage.getItem('pendingPayment');
+
+    // This function is for PhonePe Gateway redirects which have URL params
     if (!rawPending) {
-        // If there's a status in URL but no pending payment, just clear the URL
-        if (paymentStatusIndicator) window.history.replaceState({}, document.title, window.location.pathname);
+        // If there's a status in URL but no pending payment, just clear the URL and exit.
+        if (paymentStatus) window.history.replaceState({}, document.title, window.location.pathname);
         return;
     }
 
-      if (paymentStatus === 'SUCCESS' || paymentStatus === 'PAYMENT_SUCCESS') {
-        const raw = sessionStorage.getItem('pendingPayment');
-        const data = raw ? JSON.parse(raw) : null;
-        saveExpenseData(data, "Payment Successful!");
     const pendingPayment = JSON.parse(rawPending);
     const orderId = pendingPayment.orderId;
 
     // Clear URL params to avoid re-triggering
     window.history.replaceState({}, document.title, window.location.pathname);
 
-    if (!orderId) {
-        showToast("Could not find transaction to verify.", "error");
-        sessionStorage.removeItem('pendingPayment');
-      } else {
-        showToast(`Payment ${paymentStatus.toLowerCase().replace('_', ' ')}. Please try again.`, 'error');
-      }
-        return;
-    }
-
-    showToast("Verifying payment status...", "success");
-
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/payment/status/${orderId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!res.ok) throw new Error("Verification request failed.");
-
-        const statusData = await res.json();
-
-        if (statusData.success && statusData.code === 'PAYMENT_SUCCESS') {
-            saveExpenseData(pendingPayment, "Payment Successful!");
-        } else {
-            showToast(statusData.message || "Payment was not successful.", "error");
+    if (paymentStatus) {
+        if (!orderId) {
+            showToast("Could not find transaction to verify.", "error");
+            sessionStorage.removeItem('pendingPayment');
+            return;
         }
-    } catch (e) {
-        console.error("Payment verification error:", e);
-        showToast("Could not verify payment. Please check your expenses later.", "error");
-    } finally {
-        sessionStorage.removeItem('pendingPayment');
+
+        showToast("Verifying payment status...", "success");
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/payment/status/${orderId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error("Verification request failed.");
+
+            const statusData = await res.json();
+
+            if (statusData.success && statusData.code === 'PAYMENT_SUCCESS') {
+                saveExpenseData(pendingPayment, "Payment Successful!");
+            } else {
+                showToast(statusData.message || "Payment was not successful.", "error");
+            }
+        } catch (e) {
+            console.error("Payment verification error:", e);
+            showToast("Could not verify payment. Please check your expenses later.", "error");
+        } finally {
+            sessionStorage.removeItem('pendingPayment');
+        }
     }
   }
 
@@ -1025,15 +1014,18 @@
     const file = input.files[0];
     showToast("Scanning image...", "info");
 
+    // Use a dedicated hidden element for file scanning to avoid conflicts
+    const fileScanner = new Html5Qrcode("file-qr-reader");
+
     try {
-        if (!html5QrcodeScanner) {
-            html5QrcodeScanner = new Html5Qrcode("qr-reader");
-        }
-        const decodedText = await html5QrcodeScanner.scanFile(file, true);
+        // scanFile(file, false) -> false prevents rendering image to the hidden div
+        const decodedText = await fileScanner.scanFile(file, false);
         onScanSuccess(decodedText);
     } catch (err) {
         console.error("File scan error:", err);
         showToast("No QR code found in image", "error");
+    } finally {
+        try { await fileScanner.clear(); } catch(e) {}
     }
     input.value = '';
   }
