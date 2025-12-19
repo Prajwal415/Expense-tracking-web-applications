@@ -599,6 +599,9 @@
 
       // Store payment details to be used after redirect
       sessionStorage.setItem('pendingPayment', JSON.stringify(paymentDetails));
+      // Store payment details AND orderId to be used after redirect
+      const detailsToStore = { ...paymentDetails, orderId };
+      sessionStorage.setItem('pendingPayment', JSON.stringify(detailsToStore));
 
       const res = await fetch(`${API_URL}/payment/initiate`, {
           method: 'POST',
@@ -607,6 +610,8 @@
             orderId: orderId, 
             amount: paymentDetails.amount,
             returnUrl: window.location.href.split('?')[0] // Send current page URL
+            // The redirectUrl should not have query params, so we clean it.
+            redirectUrl: window.location.href.split('?')[0] 
           })
       });
 
@@ -614,9 +619,11 @@
       if (contentType && contentType.indexOf("application/json") !== -1) {
           const data = await res.json();
           if (data.success && data.url) {
+              // Redirect user to PhonePe's payment page
               window.location.href = data.url; 
           } else {
               throw new Error(data.message || "Payment failed");
+              throw new Error(data.message || "Payment initiation failed");
           }
       } else {
           // If response is not JSON (likely HTML error page)
@@ -940,22 +947,64 @@
   }
 
   function handlePaymentRedirect() {
+  async function handlePaymentRedirect() {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('status');
     const txId = urlParams.get('txId');
+    const paymentStatusIndicator = urlParams.get('status'); // This is just an indicator, not trusted.
 
     if (paymentStatus) {
       // Clear URL params to avoid re-triggering
       window.history.replaceState({}, document.title, window.location.pathname);
+    // We only proceed if there's a pending payment in session storage
+    const rawPending = sessionStorage.getItem('pendingPayment');
+    if (!rawPending) {
+        // If there's a status in URL but no pending payment, just clear the URL
+        if (paymentStatusIndicator) window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
 
       if (paymentStatus === 'SUCCESS' || paymentStatus === 'PAYMENT_SUCCESS') {
         const raw = sessionStorage.getItem('pendingPayment');
         const data = raw ? JSON.parse(raw) : null;
         saveExpenseData(data, "Payment Successful!");
+    const pendingPayment = JSON.parse(rawPending);
+    const orderId = pendingPayment.orderId;
+
+    // Clear URL params to avoid re-triggering
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    if (!orderId) {
+        showToast("Could not find transaction to verify.", "error");
         sessionStorage.removeItem('pendingPayment');
       } else {
         showToast(`Payment ${paymentStatus.toLowerCase().replace('_', ' ')}. Please try again.`, 'error');
       }
+        return;
+    }
+
+    showToast("Verifying payment status...", "success");
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/payment/status/${orderId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error("Verification request failed.");
+
+        const statusData = await res.json();
+
+        if (statusData.success && statusData.code === 'PAYMENT_SUCCESS') {
+            saveExpenseData(pendingPayment, "Payment Successful!");
+        } else {
+            showToast(statusData.message || "Payment was not successful.", "error");
+        }
+    } catch (e) {
+        console.error("Payment verification error:", e);
+        showToast("Could not verify payment. Please check your expenses later.", "error");
+    } finally {
+        sessionStorage.removeItem('pendingPayment');
     }
   }
 
