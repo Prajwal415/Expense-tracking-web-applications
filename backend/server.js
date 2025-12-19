@@ -76,7 +76,7 @@ console.log('   MONGO_URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Not Fou
 console.log('   EMAIL_USER:', process.env.EMAIL_USER ? '✅ Loaded' : '❌ Not Found');
 
 console.log('📧 Applying Robust Email Configuration (Port 587)...');
-
+ 
 // Initialize Razorpay
 let razorpayInstance = null;
 if (Razorpay && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
