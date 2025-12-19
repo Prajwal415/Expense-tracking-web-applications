@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Track Spending — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <style>
     :root {
@@ -545,7 +551,6 @@
 
     const theme = localStorage.getItem("appTheme") || "light";
     const currency = globalSettings.currency || "INR";
-    document.documentElement.setAttribute("data-theme", theme);
     document.getElementById("themeLabel").innerText = theme === "dark" ? "Dark" : "Light";
     document.getElementById("currencyLabel").innerText = currency;
     updateDashboard();

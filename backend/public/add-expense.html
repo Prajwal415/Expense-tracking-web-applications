@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Add Expense — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -543,7 +549,6 @@
     const theme = localStorage.getItem("appTheme") || "light";
     document.documentElement.setAttribute("data-theme", theme);
   }
-  applyTheme();
 
   let transactionType = 'expense';
 
@@ -738,6 +743,16 @@
     }, 3000);
   }
 
+  function escapeHtml(text) {
+    if (!text) return text;
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   let globalSettings = {};
 
   async function loadSettings() {
@@ -873,7 +888,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${index + 1}</td>
-            <td>${exp.category}</td>
+            <td>${escapeHtml(exp.category)}</td>
             <td style="font-weight: 700; color: var(--accent);">₹${(exp.amount || 0).toLocaleString('en-IN')}</td>
             <td>${dateStr}</td>
             <td>${timeStr}</td>
@@ -897,7 +912,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${index + 1}</td>
-            <td>${exp.category}</td>
+            <td>${escapeHtml(exp.category)}</td>
             <td style="font-weight: 700; color: var(--success);">+₹${(exp.amount || 0).toLocaleString('en-IN')}</td>
             <td>${dateStr}</td>
             <td>${timeStr}</td>

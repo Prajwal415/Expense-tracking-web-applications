@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Profile — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   
   <!-- html2pdf for generating PDF reports -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>

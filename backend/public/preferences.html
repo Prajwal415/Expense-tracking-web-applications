@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Preferences — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   
   <style>
     :root {
@@ -648,7 +654,6 @@
     const theme = localStorage.getItem("appTheme") || "light";
     document.documentElement.setAttribute("data-theme", theme);
   }
-  applyTheme();
 
   const DEFAULT_PREFERENCES = {
     defaultCategory: "",

@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Help & Support — FinFlow</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <style>
     :root {
       --bg: #0f172a;
@@ -735,7 +741,6 @@
                   'dark';
     document.documentElement.setAttribute('data-theme', theme);
   }
-  applyTheme();
 
   window.addEventListener('storage', function(e) {
     if (e.key === 'appTheme' || e.key === 'theme' || e.key === 'userTheme') {

@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Recurring Expenses — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -160,8 +166,6 @@
   const STORAGE_MODE_KEY = 'storageMode';
 
   // Apply theme
-  const theme = localStorage.getItem("appTheme") || "light";
-  document.documentElement.setAttribute("data-theme", theme);
 
   function showToast(message, type = 'success') {
     let toastEl = document.getElementById('toast');

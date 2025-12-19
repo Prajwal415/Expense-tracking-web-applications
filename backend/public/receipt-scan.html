@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Scan Bill — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 
   <!-- Tesseract for OCR -->
   <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -635,7 +641,6 @@
     const theme = localStorage.getItem("appTheme") || "light";
     const currency = globalSettings.currency || "INR";
 
-    document.documentElement.setAttribute("data-theme", theme);
     document.getElementById("themeLabel").innerText = theme === "dark" ? "Dark" : "Light";
     document.getElementById("currencyLabel").innerText = currency;
     document.getElementById("billCurrencyDisplay").innerText = currency;

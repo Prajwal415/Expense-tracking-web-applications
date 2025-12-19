@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Scan & Pay — Expense Tracker</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+    (function() {
+      const theme = localStorage.getItem("appTheme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     :root {
@@ -245,31 +251,13 @@
 
     <!-- App Selection Grid (Hidden by default) -->
     <div id="paymentAppsSection" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
-      <label style="margin-bottom: 8px;">Select App to Pay</label>
-      <div class="pay-app-grid">
-        <button class="pay-app-btn" onclick="payWithApp('gpay')">
-          <div class="pay-app-icon" style="background:#fff; border:1px solid #eee;">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6.19c4.51-4.18 7.09-11.15 7.09-17.84z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-3.11-.76-4.77s.27-3.32.76-4.55l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.9l7.97-6.31z"/><path fill="#EA4335" d="M24 48c6.48 0 11.95-2.13 15.89-5.81l-7.73-6.19c-2.14 1.44-4.9 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <label style="margin-bottom: 8px;">Recommended App to Pay</label>
+      <div class="pay-app-grid" style="grid-template-columns: 1fr;">
+        <button class="pay-app-btn" onclick="payWithApp('navi')">
+          <div class="pay-app-icon" style="background:#00d09c; color:white;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M15.8,5.4l-5.6,7.2V5.4H8.2v13.2h2l5.6-7.2v7.2h2V5.4H15.8z"/></svg>
           </div>
-          <span class="pay-app-name">GPay</span>
-        </button>
-        <button class="pay-app-btn" onclick="payWithApp('phonepe')">
-          <div class="pay-app-icon" style="background:#5f259f; color:white;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-          </div>
-          <span class="pay-app-name">PhonePe</span>
-        </button>
-        <button class="pay-app-btn" onclick="payWithApp('paytm')">
-          <div class="pay-app-icon" style="background:#00baf2; color:white;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          </div>
-          <span class="pay-app-name">Paytm</span>
-        </button>
-        <button class="pay-app-btn" onclick="payWithApp('default')">
-          <div class="pay-app-icon" style="background:var(--accent); color:white;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          </div>
-          <span class="pay-app-name">Other</span>
+          <span class="pay-app-name">Pay with NAVI</span>
         </button>
       </div>
     </div>
@@ -348,9 +336,6 @@
     }
   }
 
-  // Apply theme
-  const theme = localStorage.getItem("appTheme") || "light";
-  document.documentElement.setAttribute("data-theme", theme);
 
   function escapeHtml(text) {
     if (!text) return text;
@@ -671,6 +656,7 @@
     if (appName === 'gpay') scheme = 'tez://upi/pay'; // Specific scheme for GPay
     if (appName === 'phonepe') scheme = 'phonepe://pay'; // Specific scheme for PhonePe
     if (appName === 'paytm') scheme = 'paytm://pay'; // Standard scheme for Paytm
+    if (appName === 'navi') scheme = 'navi://pay'; // Specific scheme for NAVI
 
     const formattedAmount = parseFloat(amount).toFixed(2);
     
@@ -888,6 +874,7 @@
   }
 
   function payAgain(vpa, name) {
+    currentScanMode = 'direct'; // Set mode to direct UPI intent
     openPayModal();
     document.getElementById('payUpiId').value = vpa;
     document.getElementById('payTo').value = name;
