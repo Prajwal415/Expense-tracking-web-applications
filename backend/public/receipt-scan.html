@@ -500,6 +500,31 @@
       font-size: 16px;
       margin-top: 8px;
     }
+
+    /* Scan & Pay Styles */
+    .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 999; display: none; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out; }
+    .overlay.active { display: block; }
+    .modal { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--card); padding: 24px; border-radius: 16px; box-shadow: var(--shadow); z-index: 1000; width: 90%; max-width: 400px; display: none; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid var(--border); }
+    .modal.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+    .modal h4 { margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: var(--text); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions button { flex: 1; }
+    .form-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border); margin-bottom: 12px; font-size: 16px; background: var(--card); color: var(--text); }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+    .pay-app-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; margin-bottom: 5px; }
+    .pay-app-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 4px; cursor: pointer; transition: all 0.2s; height: 100%; }
+    .pay-app-btn:hover { background: var(--accent-soft); border-color: var(--accent); transform: translateY(-2px); }
+    .pay-app-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .pay-app-name { font-size: 11px; font-weight: 600; color: var(--text); }
+    .recent-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(148,163,184,0.05); border-radius: 10px; border: 1px solid var(--border); margin-bottom: 8px; }
+    .recent-info div:first-child { font-weight: 600; font-size: 14px; }
+    .recent-info div:last-child { font-size: 11px; color: var(--muted); }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1e293b; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10000; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; opacity: 0; pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
   </style>
 </head>
 <body>
@@ -518,13 +543,13 @@
   <section class="card">
     <!-- MODE TABS -->
     <div class="mode-tabs">
-      <button class="mode-tab active" onclick="switchMode('bill')" data-i18n="tabBill">🧾 Capture Bill</button>
+      <button class="mode-tab" onclick="switchMode('bill')" data-i18n="tabBill">🧾 Capture Bill</button>
       <button class="mode-tab" onclick="switchMode('moment')" data-i18n="tabMoment">✨ Capture Moment</button>
-      <button class="mode-tab" onclick="switchMode('qr')">📱 Scan QR</button>
+      <button class="mode-tab active" onclick="switchMode('qr')">📱 Scan QR</button>
     </div>
 
     <!-- ============ BILL MODE ============ -->
-    <div id="billMode" class="mode-content active">
+    <div id="billMode" class="mode-content">
       <div class="card-header">
         <div>
           <div class="card-title">🧾 Capture Bill <span class="chip">Bill mode</span></div>
@@ -603,36 +628,154 @@
     </div>
 
     <!-- ============ QR MODE ============ -->
-    <div id="qrMode" class="mode-content">
-      <div class="card-header">
-        <div>
-          <div class="card-title">📱 Scan QR Code</div>
-          <div class="muted">Scan UPI QR to extract payment details</div>
+    <div id="qrMode" class="mode-content active">
+      <div class="card" style="box-shadow:none; border:none; padding:0; margin:0;">
+        <button class="btn btn-secondary" onclick="openQrScanner('direct')" style="padding: 16px; font-size: 16px; width: 100%; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);">
+          <span data-i18n="scanDirectUPI">📱 Scan & Pay (Direct App)</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="document.getElementById('qrInputFile').click()" style="margin-top: 12px; padding: 12px; font-size: 14px; width: 100%; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);">
+          <span>🖼️ Import QR from Gallery</span>
+        </button>
+        <input type="file" id="qrInputFile" accept="image/*" style="display:none" onchange="handleFileScan(this)">
+        
+        <div style="margin-top: 15px; text-align: center; font-size: 13px; color: var(--muted);">
+          or <a href="#" onclick="openPayModal(); return false;" style="color: var(--accent); text-decoration: none; font-weight: 600;">Enter UPI ID Manually</a>
         </div>
       </div>
 
-      <div id="qr-reader" style="width: 100%; border-radius: 18px; overflow: hidden; background: #000; min-height: 300px;"></div>
-      
-      <div class="controls-row">
-        <button class="btn btn-primary" id="startQrBtn">▶ Start Scanner</button>
-        <button class="btn btn-secondary" id="stopQrBtn" style="display:none;">⏹ Stop</button>
-        <button class="btn btn-secondary" onclick="document.getElementById('qrInputFile').click()">📁 Import QR</button>
-        <input type="file" id="qrInputFile" accept="image/*" style="display:none" onchange="handleQrFile(this)">
-      </div>
-
-      <div class="section-title">Scanned Result</div>
-      <div class="preview-box" id="qrPreview">
-        <div class="muted">Scan a QR code to see details here.</div>
-      </div>
-
-      <div class="controls-row" style="margin-top: 10px;">
-        <button class="btn btn-primary" id="saveQrBtn" disabled>💾 Save to Expenses</button>
+      <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text); margin-top: 20px;">Recent Transactions</h3>
+      <div id="recentPaymentsList">
+        <div style="text-align: center; padding: 20px; color: var(--muted); font-size: 13px;">No recent payments</div>
       </div>
     </div>
   </section>
 
   <!-- CANVAS (hidden) -->
   <canvas id="captureCanvas" style="display:none;"></canvas>
+
+  <!-- Pay Modal -->
+  <div class="overlay" id="overlay"></div>
+  <div class="modal" id="payModal">
+    <h4>💸 Make Payment</h4>
+    <div>
+      <label for="payAmount">Amount (₹)</label>
+      <input type="number" id="payAmount" class="form-input" placeholder="₹0" style="font-size: 24px; font-weight: bold; text-align: center; color: var(--accent);">
+      
+      <label for="payTo">Payee Name</label>
+      <input type="text" id="payTo" class="form-input" placeholder="Name, Shop, or ID">
+      
+      <label for="payUpiId">Payee UPI ID</label>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="payUpiId" class="form-input" placeholder="e.g. merchant@okicici" style="margin-bottom: 12px;">
+        <button type="button" onclick="toggleUpiFavorite()" id="favUpiBtn" style="height: 48px; width: 48px; background:transparent; border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:20px; color:var(--warning);" title="Save as Favorite">☆</button>
+      </div>
+      <div id="upiFavoritesList" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 12px;"></div>
+
+      <label for="payCategory">Category</label>
+      <select id="payCategory" class="form-input">
+        <option value="Food">Food</option>
+        <option value="Shopping">Shopping</option>
+        <option value="Travel">Travel</option>
+        <option value="Utilities">Utilities</option>
+        <option value="Medical">Medical</option>
+        <option value="Entertainment">Entertainment</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <!-- Advanced Merchant Params (Hidden by default) -->
+      <div style="margin-top: 12px;">
+        <button type="button" class="btn btn-ghost" onclick="toggleAdvancedParams()" style="padding: 8px; font-size: 12px; width: 100%; border: 1px dashed var(--border); color: var(--muted);">
+          🔧 Show Merchant Details (MC/TR)
+        </button>
+        <div id="advancedParams" style="display: none; margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border);">
+          <label for="payMc" style="font-size: 11px;">Merchant Code (mc)</label>
+          <input type="text" id="payMc" class="form-input" style="font-size: 13px; padding: 8px; margin-bottom: 8px;" placeholder="Optional">
+          
+          <label for="payTr" style="font-size: 11px;">Transaction Ref (tr)</label>
+          <input type="text" id="payTr" class="form-input" style="font-size: 13px; padding: 8px; margin-bottom: 0;" placeholder="Optional">
+        </div>
+      </div>
+
+      <!-- App Selection Grid (Hidden by default) -->
+      <div id="paymentAppsSection" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+        <label style="margin-bottom: 8px;">Select App to Pay</label>
+        <div class="pay-app-grid">
+        <button class="pay-app-btn" onclick="payWithApp('navi')">
+            <div class="pay-app-icon" style="background:#00d29b; color:white; font-family: sans-serif; font-weight: bold;">
+              N
+            </div>
+            <span class="pay-app-name">NAVI</span>
+          </button>
+          <button class="pay-app-btn" onclick="payWithApp('gpay')">
+          <div class="pay-app-icon" style="background:#fff; border:1px solid #eee;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6.19c4.51-4.18 7.09-11.15 7.09-17.84z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-3.11-.76-4.77s.27-3.32.76-4.55l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.9l7.97-6.31z"/><path fill="#EA4335" d="M24 48c6.48 0 11.95-2.13 15.89-5.81l-7.73-6.19c-2.14 1.44-4.9 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            </div>
+            <span class="pay-app-name">GPay</span>
+          </button>
+          <button class="pay-app-btn" onclick="payWithApp('phonepe')">
+            <div class="pay-app-icon" style="background:#5f259f; color:white;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <span class="pay-app-name">PhonePe</span>
+          </button>
+          <button class="pay-app-btn" onclick="payWithApp('paytm')">
+            <div class="pay-app-icon" style="background:#00baf2; color:white;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            </div>
+            <span class="pay-app-name">Paytm</span>
+          </button>
+          <button class="pay-app-btn" onclick="payWithApp('default')">
+            <div class="pay-app-icon" style="background:var(--accent); color:white;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </div>
+            <span class="pay-app-name">Other</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="payBtnAction" onclick="handlePaymentAction()">Pay Now</button>
+      <button class="btn btn-secondary" onclick="closePayModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- QR Scanner Modal -->
+  <div class="modal" id="qrScannerModal">
+    <h4>📷 Scan UPI QR</h4>
+    <div id="qr-reader" style="width: 100%; border-radius: 8px; overflow: hidden;"></div>
+    <p style="text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px;">Point your camera at a UPI QR code</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeQrScanner()">Close</button>
+    </div>
+  </div>
+
+  <!-- Payment Confirmation Modal -->
+  <div class="modal" id="paymentConfirmModal" style="text-align: center;">
+    <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+    <h4>Payment Status</h4>
+    <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">You just returned from the payment app.</p>
+    <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+      <button class="btn btn-primary" onclick="confirmPaymentSuccess()">✅ Payment Successful</button>
+      <button class="btn btn-secondary" onclick="closePaymentConfirmModal()" style="background: rgba(239,68,68,0.1); color: var(--danger);">❌ Failed / Cancelled</button>
+    </div>
+  </div>
+
+  <!-- Payment Success Overlay -->
+  <div id="paymentSuccessOverlay" style="position: fixed; inset: 0; background: #10b981; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; animation: fadeIn 0.3s ease-out;">
+    <div style="background: white; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+      <span style="font-size: 40px;">✅</span>
+    </div>
+    <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">Payment Successful!</h2>
+    <p id="paymentSuccessMsg" style="font-size: 18px; opacity: 0.9;">₹0 paid</p>
+  </div>
+
+  <!-- Hidden div for file scanning -->
+  <div id="file-qr-reader" style="display:none;"></div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
 </div>
 
 <script>
@@ -856,7 +999,7 @@
   const billStatus = document.getElementById("billStatus");
 
   async function stopCurrentStream() {
-    if (currentStream) {
+    if (currentStream && currentStream.getTracks) {
       currentStream.getTracks().forEach(t => t.stop());
       currentStream = null;
     }
@@ -1405,92 +1548,372 @@
   window.shareMoment = shareMoment;
 
   // =====================================================
-  // QR SCANNER LOGIC
+  // QR SCANNER & PAY LOGIC
   // =====================================================
-  let qrScanner = null;
-  let lastQrResult = null;
+  let html5QrcodeScanner = null;
+  let currentScanMode = 'pg'; 
+  let isScanningProcessing = false;
+  window.scannedUpiParams = {}; 
+  let userFavorites = { upi: [] };
 
-  async function startQrScanner() {
-    if (qrScanner) return;
-    await stopCurrentStream(); // Stop other cameras
+  // --- Favorites & Settings ---
+  async function loadPaymentSettings() {
+    const mode = localStorage.getItem('storageMode') || 'mongodb';
+    if (mode === 'local') {
+      try {
+        const localFavs = JSON.parse(localStorage.getItem('favUPIs') || '[]');
+        userFavorites.upi = localFavs;
+      } catch {}
+      return;
+    }
 
-    qrScanner = new Html5Qrcode("qr-reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
     try {
-        await qrScanner.start({ facingMode: "environment" }, config, onQrScanSuccess);
-        document.getElementById("startQrBtn").style.display = 'none';
-        document.getElementById("stopQrBtn").style.display = 'inline-flex';
-    } catch (err) {
-        console.error("Error starting QR scanner", err);
-        alert("Camera failed to start for QR.");
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const res = await fetch(`${API_URL}/settings`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.favorites) userFavorites = data.favorites;
+        if (data.recents) {
+          const localRecents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
+          const mergedMap = new Map();
+          data.recents.forEach(r => mergedMap.set(r.vpa, r));
+          localRecents.forEach(r => {
+            if (!mergedMap.has(r.vpa)) mergedMap.set(r.vpa, r);
+            else if (r.lastPaid > mergedMap.get(r.vpa).lastPaid) mergedMap.set(r.vpa, r);
+          });
+          const merged = Array.from(mergedMap.values()).sort((a, b) => b.lastPaid - a.lastPaid).slice(0, 10);
+          localStorage.setItem('recentUPIPayments', JSON.stringify(merged));
+          renderRecentPayments();
+        }
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  function getUpiFavorites() { return userFavorites.upi || []; }
+
+  function renderUpiFavorites() {
+    const list = document.getElementById('upiFavoritesList');
+    if(!list) return;
+    const favs = getUpiFavorites();
+    list.innerHTML = '';
+    favs.forEach(fav => {
+      const chip = document.createElement('div');
+      chip.style.cssText = 'font-size:11px; padding:6px 10px; background:var(--accent-soft); border-radius:99px; cursor:pointer; border:1px solid var(--border); display:flex; align-items:center; gap:4px; color:var(--accent); font-weight:600;';
+      chip.innerHTML = `<span>${fav.name}</span>`;
+      chip.onclick = () => {
+        document.getElementById('payUpiId').value = fav.vpa;
+        document.getElementById('payTo').value = fav.name;
+        updateFavBtnState();
+      };
+      list.appendChild(chip);
+    });
+    updateFavBtnState();
+  }
+
+  function updateFavBtnState() {
+    const vpa = document.getElementById('payUpiId').value.trim();
+    const btn = document.getElementById('favUpiBtn');
+    const favs = getUpiFavorites();
+    const exists = favs.some(f => f.vpa === vpa);
+    btn.innerText = exists ? '★' : '☆';
+  }
+
+  async function saveUpiFavorites(favs) {
+    const mode = localStorage.getItem('storageMode') || 'mongodb';
+    userFavorites.upi = favs;
+    renderUpiFavorites();
+    if (mode === 'local') {
+      localStorage.setItem('favUPIs', JSON.stringify(favs));
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_URL}/settings/favorites`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ favorites: userFavorites })
+      });
+    } catch(e) { console.error("Sync failed", e); }
+  }
+
+  window.toggleUpiFavorite = async function() {
+    const vpa = document.getElementById('payUpiId').value.trim();
+    const name = document.getElementById('payTo').value.trim();
+    if (!vpa) { alert('Enter a UPI ID first'); return; }
+    let favs = getUpiFavorites();
+    const idx = favs.findIndex(f => f.vpa === vpa);
+    if (idx >= 0) {
+      favs.splice(idx, 1);
+    } else {
+      if (!name) { alert('Enter Payee Name to save favorite'); return; }
+      favs.push({ vpa, name });
+    }
+    await saveUpiFavorites(favs);
+  }
+
+  // --- Modals & Scanner ---
+  window.toggleAdvancedParams = function() {
+    const div = document.getElementById('advancedParams');
+    const btn = document.querySelector('button[onclick="toggleAdvancedParams()"]');
+    if (div.style.display === 'none') {
+      div.style.display = 'block';
+      btn.innerText = '🔧 Hide Merchant Details';
+    } else {
+      div.style.display = 'none';
+      btn.innerText = '🔧 Show Merchant Details (MC/TR)';
     }
   }
 
-  async function stopQrScanner() {
-    if (qrScanner) {
+  window.openPayModal = function(keepParams = false) {
+    document.getElementById('payAmount').value = '';
+    document.getElementById('payTo').value = '';
+    document.getElementById('payUpiId').value = '';
+    document.getElementById('payCategory').value = 'Food';
+    document.getElementById('payMc').value = '';
+    document.getElementById('payTr').value = '';
+    if (!keepParams) window.scannedUpiParams = {};
+    renderUpiFavorites();
+    document.getElementById('paymentAppsSection').style.display = 'none';
+    document.getElementById('payBtnAction').style.display = 'block';
+    overlay.classList.add('active');
+    document.getElementById('payModal').classList.add('active');
+    setTimeout(() => document.getElementById('payAmount').focus(), 100);
+  }
+
+  window.closePayModal = function() {
+    overlay.classList.remove('active');
+    document.getElementById('payModal').classList.remove('active');
+  }
+
+  window.openQrScanner = function(mode = 'pg') {
+    currentScanMode = mode;
+    isScanningProcessing = false;
+    stopCurrentStream(); // Stop bill/moment camera
+    overlay.classList.add('active');
+    document.getElementById('qrScannerModal').classList.add('active');
+    
+    if (!html5QrcodeScanner) {
+      html5QrcodeScanner = new Html5Qrcode("qr-reader");
+    }
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    setTimeout(() => {
+      html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, (err) => {}).catch(err => {
+        console.error("Error starting scanner", err);
+        alert("Camera access failed");
+        closeQrScanner();
+      });
+    }, 100);
+  }
+
+  window.closeQrScanner = function() {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.stop().then(() => html5QrcodeScanner.clear()).catch(err => console.error(err));
+    }
+    overlay.classList.remove('active');
+    document.getElementById('qrScannerModal').classList.remove('active');
+  }
+
+  function onScanSuccess(decodedText, decodedResult) {
+    if (isScanningProcessing) return;
+    const cleanText = decodedText.trim();
+    if (cleanText.startsWith('upi://') || cleanText.includes('@')) {
+      isScanningProcessing = true;
+      closeQrScanner();
+      let vpa = cleanText;
+      let name = '';
+      let amount = '';
+      window.scannedUpiParams = {};
+      
+      if (cleanText.startsWith('upi://')) {
         try {
-            await qrScanner.stop();
-            await qrScanner.clear();
-        } catch (e) { console.error(e); }
-        qrScanner = null;
+          const url = new URL(cleanText);
+          vpa = url.searchParams.get('pa') || '';
+          name = url.searchParams.get('pn') || '';
+          amount = url.searchParams.get('am') || '';
+          if (url.searchParams.get('mc')) window.scannedUpiParams.mc = url.searchParams.get('mc');
+          if (url.searchParams.get('tr')) window.scannedUpiParams.tr = url.searchParams.get('tr');
+          if (url.searchParams.get('tn')) window.scannedUpiParams.tn = url.searchParams.get('tn');
+          if (url.searchParams.get('url')) window.scannedUpiParams.url = url.searchParams.get('url');
+        } catch(e) { console.error("QR Parse Error", e); } 
+      }
+
+      openPayModal(true);
+      document.getElementById('payUpiId').value = vpa;
+      if (amount) {
+        document.getElementById('payAmount').value = amount;
+      } else {
+        document.getElementById('payAmount').value = '';
+        setTimeout(() => document.getElementById('payAmount').focus(), 300);
+      }
+      if (name) document.getElementById('payTo').value = decodeURIComponent(name);
+      if (window.scannedUpiParams.mc) document.getElementById('payMc').value = window.scannedUpiParams.mc;
+      if (window.scannedUpiParams.tr) document.getElementById('payTr').value = window.scannedUpiParams.tr;
+      renderUpiFavorites();
+    } else {
+      alert("Not a valid UPI QR");
     }
-    document.getElementById("startQrBtn").style.display = 'inline-flex';
-    document.getElementById("stopQrBtn").style.display = 'none';
   }
 
-  function onQrScanSuccess(decodedText, decodedResult) {
-    stopQrScanner();
-    let result = { raw: decodedText, amount: null, payee: null, note: null };
+  window.handlePaymentAction = function() {
+    const amount = document.getElementById('payAmount').value;
+    const payee = document.getElementById('payTo').value;
+    const upiId = document.getElementById('payUpiId').value;
 
-    if (decodedText.startsWith('upi://')) {
-        try {
-            const url = new URL(decodedText);
-            result.payee = url.searchParams.get('pn');
-            result.amount = url.searchParams.get('am');
-            result.note = url.searchParams.get('tn');
-            result.upiId = url.searchParams.get('pa');
-        } catch(e) {}
-    }
-    lastQrResult = result;
-    renderQrPreview(result);
+    if (!amount || amount <= 0) { alert('Enter valid amount'); return; }
+    if (!payee) { alert('Enter payee name'); return; }
+    if (!upiId) { alert('Enter Payee UPI ID'); return; }
+
+    document.getElementById('paymentAppsSection').style.display = 'block';
+    document.getElementById('payBtnAction').style.display = 'none';
   }
 
-  function renderQrPreview(res) {
-    const preview = document.getElementById("qrPreview");
-    const saveBtn = document.getElementById("saveQrBtn");
-    if (!res) {
-        preview.innerHTML = '<div class="muted">Scan a QR code to see details here.</div>';
-        saveBtn.disabled = true;
-        return;
-    }
-    let html = '';
-    if (res.payee) html += `<div class="preview-row"><span class="label">Payee:</span> <strong>${res.payee}</strong></div>`;
-    if (res.amount) html += `<div class="preview-row"><span class="label">Amount:</span> <span class="preview-amount">₹${res.amount}</span></div>`;
-    if (res.note) html += `<div class="preview-row"><span class="label">Note:</span> <span>${res.note}</span></div>`;
-    html += `<div style="margin-top:8px; font-size:11px; color:var(--muted); word-break:break-all;">${res.raw}</div>`;
-    preview.innerHTML = html;
-    saveBtn.disabled = false;
+  window.payWithApp = function(appName) {
+    const amount = document.getElementById('payAmount').value.trim();
+    const payee = document.getElementById('payTo').value.trim();
+    const upiId = document.getElementById('payUpiId').value.trim();
+    const category = document.getElementById('payCategory').value.trim();
+    
+    let note = `Payment to ${payee}`;
+    if (window.scannedUpiParams && window.scannedUpiParams.tn) note = window.scannedUpiParams.tn;
+    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) { alert("UPI links require a mobile device."); return; }
+
+    let scheme = 'upi://pay';
+    if (appName === 'gpay') scheme = 'tez://upi/pay';
+    if (appName === 'phonepe') scheme = 'phonepe://pay';
+    if (appName === 'paytm') scheme = 'paytm://pay';
+    if (appName === 'navi') scheme = 'upi://pay';
+
+    const formattedAmount = parseFloat(amount).toFixed(2);
+    let mode = '00';
+    if (window.scannedUpiParams && Object.keys(window.scannedUpiParams).length > 0) mode = '01';
+
+    let link = `${scheme}?pa=${upiId}&pn=${encodeURIComponent(payee)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(note)}&mode=${mode}`;
+    const mc = document.getElementById('payMc').value.trim();
+    const tr = document.getElementById('payTr').value.trim();
+    if (mc) link += `&mc=${encodeURIComponent(mc)}`;
+    if (tr) link += `&tr=${encodeURIComponent(tr)}`;
+    if (window.scannedUpiParams && window.scannedUpiParams.url) link += `&url=${encodeURIComponent(window.scannedUpiParams.url)}`;
+
+    window.pendingDirectPayment = { amount, payee, category, upiId };
+    window.paymentPending = Date.now();
+    closePayModal();
+    window.location.href = link;
   }
 
-  async function handleQrFile(input) {
+  window.closePaymentConfirmModal = function() {
+    overlay.classList.remove('active');
+    document.getElementById('paymentConfirmModal').classList.remove('active');
+    window.pendingDirectPayment = null;
+  }
+
+  window.confirmPaymentSuccess = function() {
+    if (window.pendingDirectPayment) {
+      document.getElementById('paymentConfirmModal').classList.remove('active');
+      saveExpenseData(window.pendingDirectPayment, "Payment Recorded");
+    }
+  }
+
+  async function saveExpenseData(data, customTitle) {
+    const expense = {
+      amount: Number(data.amount),
+      category: data.category,
+      note: `Paid to ${data.payee}`,
+      date: new Date().toISOString(),
+      currency: 'INR',
+      type: 'expense'
+    };
+    closePayModal();
+    const successOverlay = document.getElementById('paymentSuccessOverlay');
+    successOverlay.querySelector('h2').innerText = customTitle || "Payment Successful!";
+    document.getElementById('paymentSuccessMsg').innerText = `₹${data.amount} paid to ${data.payee}`;
+    successOverlay.style.display = 'flex';
+
+    try {
+        await StorageManager.addExpense(expense);
+        setTimeout(() => {
+            successOverlay.style.display = 'none';
+        }, 2000);
+    } catch(e) {
+        setTimeout(() => {
+            successOverlay.style.display = 'none';
+            alert('Saved locally (Network error)');
+        }, 2000);
+    }
+    if (data.upiId) addToRecentPayments(data.payee, data.upiId);
+  }
+
+  async function addToRecentPayments(name, vpa) {
+    let recents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
+    recents = recents.filter(r => r.vpa !== vpa);
+    recents.unshift({ name, vpa, lastPaid: Date.now() });
+    if (recents.length > 10) recents = recents.slice(0, 10);
+    localStorage.setItem('recentUPIPayments', JSON.stringify(recents));
+    renderRecentPayments();
+  }
+
+  function renderRecentPayments() {
+    const list = document.getElementById('recentPaymentsList');
+    if(!list) return;
+    const recents = JSON.parse(localStorage.getItem('recentUPIPayments') || '[]');
+    if (recents.length === 0) {
+      list.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 13px;">No recent payments</div>';
+      return;
+    }
+    list.innerHTML = '';
+    recents.forEach(r => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'recent-item';
+      itemDiv.innerHTML = `
+        <div class="recent-info">
+            <div>${r.name}</div>
+            <div>${r.vpa}</div>
+        </div>
+        <button class="btn btn-secondary" style="width:auto; padding: 6px 12px; font-size: 12px;" onclick="payAgain('${r.vpa}', '${r.name}')">Pay</button>
+      `;
+      list.appendChild(itemDiv);
+    });
+  }
+
+  window.payAgain = function(vpa, name) {
+    openPayModal();
+    document.getElementById('payUpiId').value = vpa;
+    document.getElementById('payTo').value = name;
+    document.getElementById('paymentAppsSection').style.display = 'block';
+    document.getElementById('payBtnAction').style.display = 'none';
+    setTimeout(() => document.getElementById('payAmount').focus(), 100);
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible' && window.paymentPending) {
+      const timeSpent = Date.now() - window.paymentPending;
+      window.paymentPending = false;
+      if (timeSpent > 2000) {
+        setTimeout(() => {
+            overlay.classList.add('active');
+            document.getElementById('paymentConfirmModal').classList.add('active');
+        }, 500);
+      }
+    }
+  });
+
+  window.handleFileScan = async function(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    // Use a temporary scanner instance for file to avoid conflict with live scanner
-    const tempScanner = new Html5Qrcode("qr-reader"); 
-    await stopQrScanner(); // Ensure live is stopped
+    // Use a dedicated hidden element for file scanning to avoid conflicts
+    const fileScanner = new Html5Qrcode("file-qr-reader");
     try {
-        const decodedText = await tempScanner.scanFile(file, true);
-        onQrScanSuccess(decodedText);
-    } catch (err) { alert("No QR code found in image."); }
-  }
-
-  async function saveQrToExpenses() {
-    if (!lastQrResult) return;
-    let amount = lastQrResult.amount;
-    if (!amount) { amount = prompt("Enter amount for this transaction:"); if (!amount) return; }
-    const expense = { amount: parseFloat(amount), category: "Shopping", note: lastQrResult.note || ("QR Scan: " + (lastQrResult.payee || "Unknown")), date: new Date().toISOString(), currency: "INR", type: 'expense' };
-    try { await StorageManager.addExpense(expense); alert("✓ Saved QR expense!"); } catch(e) {}
+        const decodedText = await fileScanner.scanFile(file, false);
+        onScanSuccess(decodedText);
+    } catch (err) {
+        console.error("File scan error:", err);
+        alert("No QR code found in image");
+    } finally {
+        try { await fileScanner.clear(); } catch(e) {}
+    }
+    input.value = '';
   }
 
   // =====================================================
@@ -1520,12 +1943,22 @@
     }
   });
   
-  document.getElementById("startQrBtn").addEventListener("click", startQrScanner);
-  document.getElementById("stopQrBtn").addEventListener("click", stopQrScanner);
-  document.getElementById("saveQrBtn").addEventListener("click", saveQrToExpenses);
+  // Init for Scan & Pay
+  if(document.getElementById('payUpiId')) {
+      document.getElementById('payUpiId').addEventListener('input', updateFavBtnState);
+  }
+  overlay.addEventListener('click', () => {
+    closePayModal();
+    closeQrScanner();
+  });
 
   // INITIALIZE
   renderMoments();
+  loadPaymentSettings().then(() => { renderUpiFavorites(); });
+  renderRecentPayments();
+
+  // Open QR Scanner by default
+  setTimeout(() => openQrScanner('direct'), 300);
 </script>
 <script src="translations.js"></script>
 </body>
