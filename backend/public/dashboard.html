@@ -69,7 +69,7 @@
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       color: var(--color-text);
       min-height: 100vh;
-      padding-bottom: 20px;
+      padding-bottom: 100px;
     }
 
     /* Dark theme support */
@@ -110,23 +110,6 @@
 
     body[data-theme="dark"] .color-text-secondary {
       color: #cbd5f0;
-    }
-
-    /* Dark theme for action tabs */
-    body[data-theme="dark"] .action-tab {
-      background: #1e293b;
-      color: #e2e8f0;
-      border-color: #334155;
-    }
-
-    body[data-theme="dark"] .action-tab:hover {
-      background: #334155;
-      color: #f1f5f9;
-    }
-
-    body[data-theme="dark"] .action-tab.active {
-      background: var(--color-secondary);
-      color: white;
     }
 
     /* Dark theme for dropdown menu */
@@ -438,38 +421,63 @@
        ACTION TABS
        ============================================ */
 
-
     .action-tabs {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin-bottom: var(--spacing-lg);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--color-white);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+      z-index: 1000;
+      margin-bottom: 0;
+      border-top: 1px solid var(--color-border);
+      border-radius: 20px 20px 0 0;
     }
 
+    body[data-theme="dark"] .action-tabs {
+      background: #1e293b;
+      border-color: #334155;
+    }
 
     .action-tab {
-      padding: 14px 14px;
+      background: transparent;
       border: none;
-      background: var(--gradient-primary);
+      box-shadow: none;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--color-white);
-      transition: var(--transition-fast);
+      color: var(--color-text-secondary);
+      font-size: 10px;
+      font-weight: 500;
+      flex: 1;
       border-radius: 12px;
-      box-shadow: var(--shadow-md);
+      transition: all 0.2s ease;
     }
-
 
     .action-tab:hover {
+      background: rgba(102, 126, 234, 0.1);
       transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-      filter: brightness(1.1);
+      box-shadow: none;
+      color: var(--color-secondary);
     }
 
-
     .action-tab.active {
-      box-shadow: 0 0 0 3px var(--color-secondary), var(--shadow-lg);
+      color: var(--color-secondary);
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .tab-icon {
+      font-size: 24px;
+      margin-bottom: 2px;
+      display: block;
     }
 
     /* ============================================
@@ -1164,12 +1172,12 @@
 
 <!-- Action Tabs -->
 <div class="action-tabs">
-  <button class="action-tab active" onclick="navigateToAddExpense()">➕ <span data-i18n="addExpense">Add Expense</span></button>
-  <button class="action-tab" onclick="window.location.href='scan-pay.html'">📷 <span data-i18n="scanPay">Scan & Pay</span></button>  
-  <button class="action-tab" onclick="openBillScanner()">🧾 <span data-i18n="scanBill">Scan Bill</span></button>
-  <button class="action-tab" onclick="switchTab(this, 'track')">📊 <span data-i18n="trackSpending">Track Spending</span></button>
-  <button class="action-tab" onclick="switchTab(this, 'goals')">🎯 <span data-i18n="goals">Goals</span></button>
-  <button class="action-tab" onclick="navigateToPage('recurring.html')">🔄 <span data-i18n="recurring">Recurring</span></button>
+  <button class="action-tab active" onclick="navigateToAddExpense()"><span class="tab-icon">➕</span></button>
+  <button class="action-tab" onclick="window.location.href='scan-pay.html'"><span class="tab-icon">📷</span></button>  
+  <button class="action-tab" onclick="openBillScanner()"><span class="tab-icon">🧾</span></button>
+  <button class="action-tab" onclick="switchTab(this, 'track')"><span class="tab-icon">📊</span></button>
+  <button class="action-tab" onclick="switchTab(this, 'goals')"><span class="tab-icon">🎯</span></button>
+  <button class="action-tab" onclick="navigateToPage('recurring.html')"><span class="tab-icon">🔄</span></button>
 </div>
 
 
