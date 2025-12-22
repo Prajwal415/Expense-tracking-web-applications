@@ -17,6 +17,8 @@
   <script src="receipt-ml-engine.js"></script>
   <!-- jsPDF for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Html5Qrcode for QR Scanning -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
     :root {
@@ -518,6 +520,7 @@
     <div class="mode-tabs">
       <button class="mode-tab active" onclick="switchMode('bill')" data-i18n="tabBill">🧾 Capture Bill</button>
       <button class="mode-tab" onclick="switchMode('moment')" data-i18n="tabMoment">✨ Capture Moment</button>
+      <button class="mode-tab" onclick="switchMode('qr')">📱 Scan QR</button>
     </div>
 
     <!-- ============ BILL MODE ============ -->
@@ -598,6 +601,34 @@
         <div id="noMomentsText" class="muted">No moments yet. Capture one to save it in this device.</div>
       </div>
     </div>
+
+    <!-- ============ QR MODE ============ -->
+    <div id="qrMode" class="mode-content">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📱 Scan QR Code</div>
+          <div class="muted">Scan UPI QR to extract payment details</div>
+        </div>
+      </div>
+
+      <div id="qr-reader" style="width: 100%; border-radius: 18px; overflow: hidden; background: #000; min-height: 300px;"></div>
+      
+      <div class="controls-row">
+        <button class="btn btn-primary" id="startQrBtn">▶ Start Scanner</button>
+        <button class="btn btn-secondary" id="stopQrBtn" style="display:none;">⏹ Stop</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('qrInputFile').click()">📁 Import QR</button>
+        <input type="file" id="qrInputFile" accept="image/*" style="display:none" onchange="handleQrFile(this)">
+      </div>
+
+      <div class="section-title">Scanned Result</div>
+      <div class="preview-box" id="qrPreview">
+        <div class="muted">Scan a QR code to see details here.</div>
+      </div>
+
+      <div class="controls-row" style="margin-top: 10px;">
+        <button class="btn btn-primary" id="saveQrBtn" disabled>💾 Save to Expenses</button>
+      </div>
+    </div>
   </section>
 
   <!-- CANVAS (hidden) -->
@@ -663,19 +694,22 @@
   function switchMode(mode) {
     const tabs = document.querySelectorAll(".mode-tab");
     const contents = document.querySelectorAll(".mode-content");
-
-    tabs.forEach((tab, idx) => {
-      tab.classList.remove("active");
-      if ((idx === 0 && mode === "bill") || (idx === 1 && mode === "moment")) {
-        tab.classList.add("active");
-      }
-    });
-
+    
+    tabs.forEach(t => t.classList.remove("active"));
     contents.forEach(content => content.classList.remove("active"));
+    
     if (mode === "bill") {
+      tabs[0].classList.add("active");
       document.getElementById("billMode").classList.add("active");
-    } else {
+      if (typeof stopQrScanner === 'function') stopQrScanner();
+    } else if (mode === "moment") {
+      tabs[1].classList.add("active");
       document.getElementById("momentMode").classList.add("active");
+      if (typeof stopQrScanner === 'function') stopQrScanner();
+    } else if (mode === "qr") {
+      if(tabs[2]) tabs[2].classList.add("active");
+      document.getElementById("qrMode").classList.add("active");
+      if (typeof stopCurrentStream === 'function') stopCurrentStream();
     }
   }
 
@@ -1371,6 +1405,95 @@
   window.shareMoment = shareMoment;
 
   // =====================================================
+  // QR SCANNER LOGIC
+  // =====================================================
+  let qrScanner = null;
+  let lastQrResult = null;
+
+  async function startQrScanner() {
+    if (qrScanner) return;
+    await stopCurrentStream(); // Stop other cameras
+
+    qrScanner = new Html5Qrcode("qr-reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    
+    try {
+        await qrScanner.start({ facingMode: "environment" }, config, onQrScanSuccess);
+        document.getElementById("startQrBtn").style.display = 'none';
+        document.getElementById("stopQrBtn").style.display = 'inline-flex';
+    } catch (err) {
+        console.error("Error starting QR scanner", err);
+        alert("Camera failed to start for QR.");
+    }
+  }
+
+  async function stopQrScanner() {
+    if (qrScanner) {
+        try {
+            await qrScanner.stop();
+            await qrScanner.clear();
+        } catch (e) { console.error(e); }
+        qrScanner = null;
+    }
+    document.getElementById("startQrBtn").style.display = 'inline-flex';
+    document.getElementById("stopQrBtn").style.display = 'none';
+  }
+
+  function onQrScanSuccess(decodedText, decodedResult) {
+    stopQrScanner();
+    let result = { raw: decodedText, amount: null, payee: null, note: null };
+
+    if (decodedText.startsWith('upi://')) {
+        try {
+            const url = new URL(decodedText);
+            result.payee = url.searchParams.get('pn');
+            result.amount = url.searchParams.get('am');
+            result.note = url.searchParams.get('tn');
+            result.upiId = url.searchParams.get('pa');
+        } catch(e) {}
+    }
+    lastQrResult = result;
+    renderQrPreview(result);
+  }
+
+  function renderQrPreview(res) {
+    const preview = document.getElementById("qrPreview");
+    const saveBtn = document.getElementById("saveQrBtn");
+    if (!res) {
+        preview.innerHTML = '<div class="muted">Scan a QR code to see details here.</div>';
+        saveBtn.disabled = true;
+        return;
+    }
+    let html = '';
+    if (res.payee) html += `<div class="preview-row"><span class="label">Payee:</span> <strong>${res.payee}</strong></div>`;
+    if (res.amount) html += `<div class="preview-row"><span class="label">Amount:</span> <span class="preview-amount">₹${res.amount}</span></div>`;
+    if (res.note) html += `<div class="preview-row"><span class="label">Note:</span> <span>${res.note}</span></div>`;
+    html += `<div style="margin-top:8px; font-size:11px; color:var(--muted); word-break:break-all;">${res.raw}</div>`;
+    preview.innerHTML = html;
+    saveBtn.disabled = false;
+  }
+
+  async function handleQrFile(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    // Use a temporary scanner instance for file to avoid conflict with live scanner
+    const tempScanner = new Html5Qrcode("qr-reader"); 
+    await stopQrScanner(); // Ensure live is stopped
+    try {
+        const decodedText = await tempScanner.scanFile(file, true);
+        onQrScanSuccess(decodedText);
+    } catch (err) { alert("No QR code found in image."); }
+  }
+
+  async function saveQrToExpenses() {
+    if (!lastQrResult) return;
+    let amount = lastQrResult.amount;
+    if (!amount) { amount = prompt("Enter amount for this transaction:"); if (!amount) return; }
+    const expense = { amount: parseFloat(amount), category: "Shopping", note: lastQrResult.note || ("QR Scan: " + (lastQrResult.payee || "Unknown")), date: new Date().toISOString(), currency: "INR", type: 'expense' };
+    try { await StorageManager.addExpense(expense); alert("✓ Saved QR expense!"); } catch(e) {}
+  }
+
+  // =====================================================
   // EVENT BINDINGS
   // =====================================================
   document.getElementById("startBillBtn").addEventListener("click", () => startCamera("bill"));
@@ -1396,6 +1519,10 @@
       btn.classList.add("btn-secondary");
     }
   });
+  
+  document.getElementById("startQrBtn").addEventListener("click", startQrScanner);
+  document.getElementById("stopQrBtn").addEventListener("click", stopQrScanner);
+  document.getElementById("saveQrBtn").addEventListener("click", saveQrToExpenses);
 
   // INITIALIZE
   renderMoments();
